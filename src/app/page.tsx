@@ -13,7 +13,7 @@ export default async function Home() {
         {cracks?.map((crack) => (
           <figure
             key={crack.id}
-            className="flex flex-col overflow-hidden rounded-lg border border-black/10 dark:border-white/15"
+            className="flex flex-col overflow-hidden rounded-lg border border-black/10 bg-white dark:border-white/15"
           >
             {crack.img_url && (
               // eslint-disable-next-line @next/next/no-img-element
