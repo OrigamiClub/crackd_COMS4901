@@ -2,19 +2,21 @@
 
 :root {
   --background: #e8eff4;
-  --foreground: #6e5a45;
+  --foreground: #8a866b;
+  --title: #ffffff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-title: var(--title);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #ffffff;
     --foreground: #ededed;
   }
 }
