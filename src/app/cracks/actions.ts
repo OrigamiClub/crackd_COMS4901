@@ -266,3 +266,33 @@ export async function deleteCrack(formData: FormData) {
   revalidatePath("/");
   redirect("/");
 }
+
+// Likes the meme if the user hasn't yet, otherwise removes their like.
+export async function toggleLike(crackId: number) {
+  const supabase = await createClient();
+  const user = await requireUser(supabase);
+
+  const { data: deleted, error: deleteError } = await supabase
+    .from("likes")
+    .delete()
+    .eq("crack_id", crackId)
+    .eq("liker", user.id)
+    .select("crack_id");
+
+  if (deleteError) {
+    throw new Error(deleteError.message);
+  }
+
+  if (!deleted || deleted.length === 0) {
+    const { error } = await supabase
+      .from("likes")
+      .insert({ crack_id: crackId, liker: user.id });
+
+    // 23505 = already liked (e.g. a double click); that's fine.
+    if (error && error.code !== "23505") {
+      throw new Error(error.message);
+    }
+  }
+
+  revalidatePath("/");
+}

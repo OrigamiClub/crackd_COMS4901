@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
+import LikeButton from "./cracks/like-button";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -8,8 +9,13 @@ export default async function Home() {
   } = await supabase.auth.getUser();
   const { data: cracks } = await supabase
     .from("cracks")
-    .select()
+    .select("*, likes(count)")
     .order("created_at", { ascending: false });
+
+  const { data: myLikes } = user
+    ? await supabase.from("likes").select("crack_id").eq("liker", user.id)
+    : { data: null };
+  const likedIds = new Set(myLikes?.map((like) => like.crack_id));
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
@@ -44,14 +50,22 @@ export default async function Home() {
             {crack.text && (
               <figcaption className="p-3 text-sm">{crack.text}</figcaption>
             )}
-            {user && crack.creator_id === user.id && (
-              <Link
-                href={`/cracks/${crack.id}/edit`}
-                className="mt-auto self-end px-3 pb-3 text-sm underline"
-              >
-                Edit
-              </Link>
-            )}
+            <div className="mt-auto flex items-center justify-between px-3 pb-3">
+              <LikeButton
+                crackId={crack.id}
+                count={crack.likes?.[0]?.count ?? 0}
+                liked={likedIds.has(crack.id)}
+                loggedIn={!!user}
+              />
+              {user && crack.creator_id === user.id && (
+                <Link
+                  href={`/cracks/${crack.id}/edit`}
+                  className="text-sm underline"
+                >
+                  Edit
+                </Link>
+              )}
+            </div>
           </figure>
         ))}
       </div>
