@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { deleteCrack, updateCrack } from "../../actions";
+import CrackFields from "../../crack-fields";
 
 export default async function EditCrackPage({
   params,
@@ -44,21 +45,10 @@ export default async function EditCrackPage({
       )}
       <form action={updateCrack} className="flex w-full max-w-sm flex-col gap-4">
         <input type="hidden" name="id" value={crack.id} />
-        <label className="text-sm">
-          Replace image
-          <input
-            type="file"
-            name="photo"
-            accept="image/*"
-            className="mt-1 block w-full text-sm"
-          />
-        </label>
-        <textarea
-          name="text"
-          placeholder="Caption"
-          rows={3}
-          defaultValue={crack.text ?? ""}
-          className="rounded-md border border-black/10 bg-white p-2"
+        <CrackFields
+          photoLabel="Replace image"
+          defaultText={crack.text ?? ""}
+          crackId={crack.id}
         />
         <button
           type="submit"

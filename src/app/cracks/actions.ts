@@ -61,6 +61,107 @@ function getPhoto(formData: FormData) {
   return photo && photo.size > 0 ? photo : null;
 }
 
+// Tried in order; we move on to the next one only when a model is
+// overloaded (429/503), which happens often with the newest Flash.
+const GEMINI_MODELS = [
+  process.env.GEMINI_MODEL ?? "gemini-3.8-flash",
+  "gemini-3.5-flash",
+];
+
+const CAPTION_PROMPT =
+  "You write captions for a Columbia University / New York City meme board " +
+  "called \"Cracking Jokes in the City of New York\". Write one short, funny " +
+  "meme caption for this image. Reply with only the caption text — no quotes, " +
+  "hashtags, or explanation.";
+
+// Asks Gemini for a caption. The image is either a freshly chosen `photo`
+// file or, on the edit page, the stored image of the user's own meme `id`.
+// Returns an error message instead of throwing so the form can show it.
+export async function generateCaption(
+  formData: FormData
+): Promise<{ caption: string } | { error: string }> {
+  const supabase = await createClient();
+  const user = await requireUser(supabase);
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return { error: "Caption generation isn't configured (GEMINI_API_KEY)." };
+  }
+
+  let image: Blob | null = getPhoto(formData);
+
+  if (!image) {
+    const id = formData.get("id")?.toString();
+    const { data: crack } = id
+      ? await supabase
+          .from("cracks")
+          .select("img_url")
+          .eq("id", id)
+          .eq("creator_id", user.id)
+          .maybeSingle()
+      : { data: null };
+
+    if (!crack?.img_url) {
+      return { error: "Choose an image first." };
+    }
+
+    const response = await fetch(crack.img_url);
+    if (!response.ok) {
+      return { error: "Couldn't load the current image." };
+    }
+    image = await response.blob();
+  }
+
+  const data = Buffer.from(await image.arrayBuffer()).toString("base64");
+
+  const body = JSON.stringify({
+    contents: [
+      {
+        parts: [
+          { inline_data: { mime_type: image.type || "image/jpeg", data } },
+          { text: CAPTION_PROMPT },
+        ],
+      },
+    ],
+  });
+
+  let response: Response | null = null;
+  for (const model of GEMINI_MODELS) {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body,
+      }
+    );
+
+    if (response.status !== 429 && response.status !== 503) {
+      break;
+    }
+  }
+
+  if (!response?.ok) {
+    console.error("Gemini error", response?.status, await response?.text());
+    return { error: "Gemini couldn't generate a caption. Try again." };
+  }
+
+  const result = await response.json();
+  const caption = result.candidates?.[0]?.content?.parts
+    ?.map((part: { text?: string }) => part.text ?? "")
+    .join("")
+    .trim();
+
+  if (!caption) {
+    return { error: "Gemini didn't return a caption. Try again." };
+  }
+
+  return { caption };
+}
+
 export async function createCrack(formData: FormData) {
   const supabase = await createClient();
   const user = await requireUser(supabase);
