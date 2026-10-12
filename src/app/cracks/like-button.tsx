@@ -51,7 +51,7 @@ export default function LikeButton({
       aria-pressed={optimistic.liked}
       className={className}
     >
-      <span aria-hidden className={optimistic.liked ? "text-red-600" : ""}>
+      <span aria-hidden className={optimistic.liked ? "text-red-300" : ""}>
         {optimistic.liked ? "♥" : "♡"}
       </span>
       {label}
