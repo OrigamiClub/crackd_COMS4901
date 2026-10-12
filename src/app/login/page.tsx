@@ -16,7 +16,7 @@ export default function LoginPage() {
       <h1 className="text-2xl font-semibold text-title">Log in</h1>
       <button
         onClick={handleGoogleLogin}
-        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
+        className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-white"
       >
         Continue with Google
       </button>
