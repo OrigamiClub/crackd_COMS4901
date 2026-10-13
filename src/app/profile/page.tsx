@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import AccountButton from "@/components/account-button";
 import { updateProfile } from "./actions";
+import AvatarPicker from "./avatar-picker";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -33,59 +34,56 @@ export default async function ProfilePage() {
         </Link>
         <AccountButton />
       </div>
-      <h1 className="text-2xl font-semibold text-title">Profile</h1>
+      <h1 className="max-w-2xl text-center text-[40px] leading-tight font-light tracking-tight text-title">
+        we promise not to sell your information to Facebook
+      </h1>
       {isIncomplete && (
         <p className="max-w-sm text-center text-sm text-amber-700">
           Welcome! Add your first and last name to finish setting up your
           profile.
         </p>
       )}
-      {profile?.profpic && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={profile.profpic}
-          alt=""
-          className="h-20 w-20 rounded-full object-cover"
-        />
-      )}
       <form
         action={updateProfile}
-        className="flex w-full max-w-sm flex-col gap-4"
+        className="flex w-full max-w-md flex-col gap-6"
       >
-        <input
-          type="text"
-          name="first_name"
-          placeholder="First name"
-          defaultValue={profile?.first_name ?? ""}
-          required
-          className="rounded-md border border-black/10 bg-white p-2"
-        />
-        <input
-          type="text"
-          name="last_name"
-          placeholder="Last name"
-          defaultValue={profile?.last_name ?? ""}
-          required
-          className="rounded-md border border-black/10 bg-white p-2"
-        />
-        <label className="text-sm">
-          Profile photo
-          <input
-            type="file"
-            name="photo"
-            accept="image/*"
-            className="mt-1 block w-full text-sm file:mr-3 file:cursor-pointer file:rounded-full file:border file:border-black/10 file:bg-foreground file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
-          />
-        </label>
+        <AvatarPicker currentUrl={profile?.profpic ?? null} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm">
+            First name
+            <input
+              type="text"
+              name="first_name"
+              defaultValue={profile?.first_name ?? ""}
+              required
+              autoComplete="given-name"
+              className="rounded-md border border-black/10 bg-white p-2 text-base"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            Last name
+            <input
+              type="text"
+              name="last_name"
+              defaultValue={profile?.last_name ?? ""}
+              required
+              autoComplete="family-name"
+              className="rounded-md border border-black/10 bg-white p-2 text-base"
+            />
+          </label>
+        </div>
         <button
           type="submit"
-          className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-white"
+          className="flex h-10 items-center justify-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
         >
           Save
         </button>
       </form>
       <form action="/api/auth/logout" method="POST">
-        <button type="submit" className="text-sm underline">
+        <button
+          type="submit"
+          className="flex h-10 items-center rounded-full border border-foreground px-4 text-sm font-medium text-foreground"
+        >
           Log out
         </button>
       </form>
