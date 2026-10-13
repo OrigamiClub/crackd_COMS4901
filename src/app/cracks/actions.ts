@@ -179,6 +179,10 @@ export async function createCrack(formData: FormData) {
     throw new Error("Please choose an image.");
   }
 
+  if (!text) {
+    throw new Error("Generate a caption before posting.");
+  }
+
   const imgUrl = await uploadCrackImage(supabase, user.id, photo);
 
   const { error } = await supabase

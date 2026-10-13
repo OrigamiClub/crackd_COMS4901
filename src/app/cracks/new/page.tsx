@@ -27,14 +27,8 @@ export default async function NewCrackPage() {
         <AccountButton />
       </div>
       <h1 className="text-[80px] text-title">contribute a crack!</h1>
-      <form action={createCrack} className="flex w-full max-w-sm flex-col gap-4">
-        <CrackFields photoLabel="Image" photoRequired />
-        <button
-          type="submit"
-          className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-white"
-        >
-          Post
-        </button>
+      <form action={createCrack} className="flex w-full max-w-xl flex-col gap-4">
+        <CrackFields />
       </form>
     </main>
   );

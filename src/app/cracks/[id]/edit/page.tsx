@@ -42,27 +42,13 @@ export default async function EditCrackPage({
         <AccountButton />
       </div>
       <h1 className="text-2xl font-semibold text-title">Edit meme</h1>
-      {crack.img_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={crack.img_url}
-          alt={crack.text ?? ""}
-          className="aspect-square w-full max-w-sm rounded-lg object-cover"
-        />
-      )}
-      <form action={updateCrack} className="flex w-full max-w-sm flex-col gap-4">
+      <form action={updateCrack} className="flex w-full max-w-xl flex-col gap-4">
         <input type="hidden" name="id" value={crack.id} />
         <CrackFields
-          photoLabel="Replace image"
           defaultText={crack.text ?? ""}
+          defaultImageUrl={crack.img_url}
           crackId={crack.id}
         />
-        <button
-          type="submit"
-          className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-white"
-        >
-          Save
-        </button>
       </form>
       <form action={deleteCrack}>
         <input type="hidden" name="id" value={crack.id} />
