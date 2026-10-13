@@ -20,8 +20,8 @@ export default async function Home() {
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-[100px] font-semibold text-title">
-          Cracking Jokes in the City of New York
+        <h1 className="text-[60px] font-light tracking-tight text-title">
+          cracking jokes in the city of new york
         </h1>
         {user && (
           <Link
