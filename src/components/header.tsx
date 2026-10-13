@@ -12,7 +12,7 @@ export default async function Header() {
       <header className="flex justify-end p-4">
         <Link
           href="/login"
-          className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium"
+          className="rounded-full border border-black/10 bg-foreground px-4 py-2 text-sm font-medium text-white"
         >
           Log in
         </Link>
@@ -35,7 +35,7 @@ export default async function Header() {
     <header className="flex justify-end p-4">
       <Link
         href="/profile"
-        className="flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium"
+        className="flex items-center gap-2 rounded-full border border-black/10 bg-foreground px-4 py-2 text-sm font-medium text-white"
       >
         {profile?.profpic && (
           // eslint-disable-next-line @next/next/no-img-element

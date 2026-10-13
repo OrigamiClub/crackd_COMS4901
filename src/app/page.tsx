@@ -26,9 +26,9 @@ export default async function Home() {
         {user && (
           <Link
             href="/cracks/new"
-            className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium"
+            className="rounded-full border border-black/10 bg-foreground px-4 py-2 text-sm font-medium text-white"
           >
-            New meme
+            + New Crack
           </Link>
         )}
       </div>

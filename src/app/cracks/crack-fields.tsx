@@ -57,7 +57,7 @@ export default function CrackFields({
           accept="image/*"
           required={photoRequired}
           onChange={(e) => setHasPhoto(!!e.target.files?.length)}
-          className="mt-1 block w-full text-sm"
+          className="mt-1 block w-full text-sm file:mr-3 file:cursor-pointer file:rounded-full file:border file:border-black/10 file:bg-foreground file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
         />
       </label>
       <textarea
@@ -72,7 +72,7 @@ export default function CrackFields({
         type="button"
         onClick={handleGenerate}
         disabled={!canGenerate || isPending}
-        className="self-start text-sm underline disabled:opacity-50"
+        className="self-start rounded-full border border-black/10 bg-foreground px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
         {isPending ? "Generating…" : "✨ Generate caption with AI"}
       </button>

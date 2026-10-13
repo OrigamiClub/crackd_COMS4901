@@ -23,7 +23,10 @@ export default async function ProfilePage() {
 
   return (
     <main className="flex flex-1 flex-col items-center gap-6 p-8">
-      <Link href="/" className="self-start text-sm underline">
+      <Link
+        href="/"
+        className="self-start rounded-full border border-black/10 bg-foreground px-4 py-2 text-sm font-medium text-white"
+      >
         ← Back to home
       </Link>
       <h1 className="text-2xl font-semibold text-title">Profile</h1>
@@ -67,7 +70,7 @@ export default async function ProfilePage() {
             type="file"
             name="photo"
             accept="image/*"
-            className="mt-1 block w-full text-sm"
+            className="mt-1 block w-full text-sm file:mr-3 file:cursor-pointer file:rounded-full file:border file:border-black/10 file:bg-foreground file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
           />
         </label>
         <button
