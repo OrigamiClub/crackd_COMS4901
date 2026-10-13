@@ -7,6 +7,7 @@ const pill =
   "flex h-10 items-center rounded-full border px-4 text-sm font-medium";
 const pillOff = `${pill} border-black/10 bg-foreground text-white`;
 const pillOn = `${pill} border-foreground bg-background text-foreground`;
+const pillAccent = `${pill} border-black/10 bg-title text-white`;
 
 const FILTERS = [
   { key: "mine", label: "My Cracks", empty: "You haven't posted any cracks yet." },
@@ -64,7 +65,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               );
             })}
           {user && (
-            <Link href="/cracks/new" className={pillOff}>
+            <Link href="/cracks/new" className={pillAccent}>
               + New Crack
             </Link>
           )}
