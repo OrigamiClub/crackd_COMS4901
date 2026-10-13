@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
+import AccountButton from "@/components/account-button";
 import LikeButton from "./cracks/like-button";
 
 export default async function Home() {
@@ -23,14 +24,17 @@ export default async function Home() {
         <h1 className="text-[60px] font-light tracking-tight text-title">
           cracking jokes in the city of new york
         </h1>
-        {user && (
-          <Link
-            href="/cracks/new"
-            className="rounded-full border border-black/10 bg-foreground px-4 py-2 text-sm font-medium text-white"
-          >
-            + New Crack
-          </Link>
-        )}
+        <div className="flex items-center gap-3">
+          {user && (
+            <Link
+              href="/cracks/new"
+              className="flex h-10 items-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
+            >
+              + New Crack
+            </Link>
+          )}
+          <AccountButton />
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {cracks?.map((crack) => (

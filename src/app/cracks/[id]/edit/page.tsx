@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import AccountButton from "@/components/account-button";
 import { deleteCrack, updateCrack } from "../../actions";
 import CrackFields from "../../crack-fields";
 
@@ -31,12 +32,15 @@ export default async function EditCrackPage({
 
   return (
     <main className="flex flex-1 flex-col items-center gap-6 p-8">
-      <Link
-        href="/"
-        className="self-start rounded-full border border-black/10 bg-foreground px-4 py-2 text-sm font-medium text-white"
-      >
-        ← Back to home
-      </Link>
+      <div className="flex w-full items-center justify-between gap-4">
+        <Link
+          href="/"
+          className="flex h-10 items-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
+        >
+          ← Back to home
+        </Link>
+        <AccountButton />
+      </div>
       <h1 className="text-2xl font-semibold text-title">Edit meme</h1>
       {crack.img_url && (
         // eslint-disable-next-line @next/next/no-img-element
