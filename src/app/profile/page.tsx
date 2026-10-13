@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import AccountButton from "@/components/account-button";
 import { updateProfile } from "./actions";
 
 export default async function ProfilePage() {
@@ -23,9 +24,15 @@ export default async function ProfilePage() {
 
   return (
     <main className="flex flex-1 flex-col items-center gap-6 p-8">
-      <Link href="/" className="self-start text-sm underline">
-        ← Back to home
-      </Link>
+      <div className="flex w-full items-center justify-between gap-4">
+        <Link
+          href="/"
+          className="flex h-10 items-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
+        >
+          ← Back to home
+        </Link>
+        <AccountButton />
+      </div>
       <h1 className="text-2xl font-semibold text-title">Profile</h1>
       {isIncomplete && (
         <p className="max-w-sm text-center text-sm text-amber-700">
@@ -67,12 +74,12 @@ export default async function ProfilePage() {
             type="file"
             name="photo"
             accept="image/*"
-            className="mt-1 block w-full text-sm"
+            className="mt-1 block w-full text-sm file:mr-3 file:cursor-pointer file:rounded-full file:border file:border-black/10 file:bg-foreground file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
           />
         </label>
         <button
           type="submit"
-          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
+          className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-white"
         >
           Save
         </button>
