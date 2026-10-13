@@ -26,7 +26,7 @@ export default async function NewCrackPage() {
         </Link>
         <AccountButton />
       </div>
-      <h1 className="text-2xl font-semibold text-title">New meme</h1>
+      <h1 className="text-[80px] text-title">contribute a crack!</h1>
       <form action={createCrack} className="flex w-full max-w-sm flex-col gap-4">
         <CrackFields photoLabel="Image" photoRequired />
         <button
