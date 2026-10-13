@@ -25,7 +25,7 @@ export default function AvatarPicker({
       <input
         type="file"
         name="photo"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/gif,image/webp"
         aria-label="Change profile photo"
         onChange={(e) => {
           const photo = e.target.files?.[0];

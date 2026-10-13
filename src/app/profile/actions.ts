@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { checkImage } from "@/lib/images";
+
+const AVATAR_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/`;
 
 export async function updateProfile(formData: FormData) {
   const supabase = await createClient();
@@ -23,13 +26,32 @@ export async function updateProfile(formData: FormData) {
     last_name: lastName,
   };
 
+  let oldAvatarPath: string | null = null;
+
   if (photo && photo.size > 0) {
-    const extension = photo.name.split(".").pop() ?? "jpg";
-    const path = `${user.id}/avatar.${extension}`;
+    const checked = await checkImage(photo);
+    if ("error" in checked) {
+      throw new Error(checked.error);
+    }
+
+    const { data: current } = await supabase
+      .from("profiles")
+      .select("profpic")
+      .eq("id", user.id)
+      .single();
+    if (current?.profpic?.startsWith(AVATAR_PREFIX)) {
+      oldAvatarPath = decodeURIComponent(
+        current.profpic.slice(AVATAR_PREFIX.length)
+      );
+    }
+
+    // A new name per upload, so browsers and the CDN don't keep showing a
+    // cached copy of the previous photo.
+    const path = `${user.id}/avatar-${crypto.randomUUID()}.${checked.extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(path, photo, { upsert: true, contentType: photo.type });
+      .upload(path, photo, { contentType: checked.type });
 
     if (uploadError) {
       throw new Error(uploadError.message);
@@ -56,6 +78,11 @@ export async function updateProfile(formData: FormData) {
     throw new Error(
       "Profile update didn't match any row — check RLS policies on public.profiles."
     );
+  }
+
+  // Best-effort cleanup of the replaced photo.
+  if (updates.profpic && oldAvatarPath) {
+    await supabase.storage.from("avatars").remove([oldAvatarPath]);
   }
 
   revalidatePath("/profile");

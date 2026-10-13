@@ -98,7 +98,7 @@ export default function CrackFields({
           ref={photoRef}
           type="file"
           name="photo"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/gif,image/webp"
           required={!isEdit}
           aria-label={copy.picture}
           onChange={handlePhotoChange}

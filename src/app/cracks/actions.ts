@@ -3,11 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { checkImage } from "@/lib/images";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 const BUCKET = "cracks";
 const PUBLIC_PREFIX = `/storage/v1/object/public/${BUCKET}/`;
+// Only images in our own bucket are fetched server-side, so a crack row
+// edited to point elsewhere can't make the server request arbitrary URLs.
+const OWN_IMAGE_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL}${PUBLIC_PREFIX}`;
 
 async function requireUser(supabase: SupabaseClient) {
   const {
@@ -26,12 +30,16 @@ async function uploadCrackImage(
   userId: string,
   photo: File
 ) {
-  const extension = photo.name.split(".").pop() ?? "jpg";
-  const path = `${userId}/${crypto.randomUUID()}.${extension}`;
+  const checked = await checkImage(photo);
+  if ("error" in checked) {
+    throw new Error(checked.error);
+  }
+
+  const path = `${userId}/${crypto.randomUUID()}.${checked.extension}`;
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(path, photo, { contentType: photo.type });
+    .upload(path, photo, { contentType: checked.type });
 
   if (error) {
     throw new Error(error.message);
@@ -68,11 +76,20 @@ const GEMINI_MODELS = [
   "gemini-3.5-flash",
 ];
 
+// Per-user caption limits, enforced with the caption_requests log.
+const CAPTION_LIMITS = [
+  { windowMs: 60 * 1000, max: 5, message: "Slow down — the hamsters need a minute." },
+  { windowMs: 24 * 60 * 60 * 1000, max: 50, message: "The hamsters are done for today. Try again tomorrow." },
+];
+
+// Each model gets this long before we give up on it and try the next.
+const GEMINI_TIMEOUT_MS = 20 * 1000;
+
 const CAPTION_PROMPT =
   "You write captions for a Columbia University / New York City meme board " +
   "called \"Cracking Jokes in the City of New York\". Write one short, funny " +
   "meme caption for this image. Reply with only the caption text — no quotes, " +
-  "hashtags, or explanation.";
+  "hashtags, or explanation. The user has the option to provide additional direction afterward. If they do not, try to create a Columbia University-related caption of your own. Please don't be picky.";
 
 // Asks Gemini for a caption. The image is either a freshly chosen `photo`
 // file or, on the edit page, the stored image of the user's own meme `id`.
@@ -87,6 +104,23 @@ export async function generateCaption(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return { error: "Caption generation isn't configured (GEMINI_API_KEY)." };
+  }
+
+  for (const limit of CAPTION_LIMITS) {
+    const since = new Date(Date.now() - limit.windowMs).toISOString();
+    const { count, error } = await supabase
+      .from("caption_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", since);
+
+    if (error) {
+      console.error("Caption rate limit check failed", error);
+      return { error: "Caption generation is unavailable right now." };
+    }
+    if ((count ?? 0) >= limit.max) {
+      return { error: limit.message };
+    }
   }
 
   let image: Blob | null = getPhoto(formData);
@@ -106,11 +140,32 @@ export async function generateCaption(
       return { error: "Choose an image first." };
     }
 
-    const response = await fetch(crack.img_url);
+    if (!crack.img_url.startsWith(OWN_IMAGE_PREFIX)) {
+      return {
+        error: "This picture is hosted elsewhere — choose it again to caption it.",
+      };
+    }
+
+    const response = await fetch(crack.img_url, {
+      signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+    });
     if (!response.ok) {
       return { error: "Couldn't load the current image." };
     }
     image = await response.blob();
+  }
+
+  const checked = await checkImage(image);
+  if ("error" in checked) {
+    return checked;
+  }
+
+  const { error: logError } = await supabase
+    .from("caption_requests")
+    .insert({ user_id: user.id });
+  if (logError) {
+    console.error("Couldn't log caption request", logError);
+    return { error: "Caption generation is unavailable right now." };
   }
 
   const data = Buffer.from(await image.arrayBuffer()).toString("base64");
@@ -124,7 +179,7 @@ export async function generateCaption(
     contents: [
       {
         parts: [
-          { inline_data: { mime_type: image.type || "image/jpeg", data } },
+          { inline_data: { mime_type: checked.type, data } },
           { text: prompt },
         ],
       },
@@ -133,17 +188,25 @@ export async function generateCaption(
 
   let response: Response | null = null;
   for (const model of GEMINI_MODELS) {
-    response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body,
-      }
-    );
+    try {
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+          },
+          body,
+          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+        }
+      );
+    } catch (error) {
+      // Timed out or network failure: try the next model.
+      console.error(`Gemini ${model} request failed`, error);
+      response = null;
+      continue;
+    }
 
     if (response.status !== 429 && response.status !== 503) {
       break;
