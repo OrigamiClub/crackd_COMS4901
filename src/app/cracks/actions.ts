@@ -76,7 +76,8 @@ const CAPTION_PROMPT =
 
 // Asks Gemini for a caption. The image is either a freshly chosen `photo`
 // file or, on the edit page, the stored image of the user's own meme `id`.
-// Returns an error message instead of throwing so the form can show it.
+// An optional `direction` (e.g. "make a joke about Lion Fund") steers the
+// joke. Returns an error message instead of throwing so the form can show it.
 export async function generateCaption(
   formData: FormData
 ): Promise<{ caption: string } | { error: string }> {
@@ -114,12 +115,17 @@ export async function generateCaption(
 
   const data = Buffer.from(await image.arrayBuffer()).toString("base64");
 
+  const direction = formData.get("direction")?.toString().trim().slice(0, 300);
+  const prompt = direction
+    ? `${CAPTION_PROMPT}\n\nThe poster's direction for the joke: ${direction}`
+    : CAPTION_PROMPT;
+
   const body = JSON.stringify({
     contents: [
       {
         parts: [
           { inline_data: { mime_type: image.type || "image/jpeg", data } },
-          { text: CAPTION_PROMPT },
+          { text: prompt },
         ],
       },
     ],

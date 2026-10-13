@@ -3,10 +3,10 @@
 import { useRef, useState, useTransition } from "react";
 import { generateCaption } from "./actions";
 
-// Image picker + caption box shared by the new and edit forms, with a
-// button that asks Gemini to write the caption from the chosen image.
-// On the edit page, `crackId` lets it caption the existing image when no
-// new file is picked.
+// Image picker shared by the new and edit forms. Captions are written by
+// Gemini from the chosen image; the text box only steers the joke (e.g.
+// "make a joke about Lion Fund"). On the edit page, `crackId` lets it
+// caption the existing image when no new file is picked.
 export default function CrackFields({
   photoLabel,
   photoRequired = false,
@@ -20,6 +20,7 @@ export default function CrackFields({
 }) {
   const photoRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(defaultText);
+  const [direction, setDirection] = useState("");
   const [hasPhoto, setHasPhoto] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -34,6 +35,7 @@ export default function CrackFields({
     } else if (crackId !== undefined) {
       formData.set("id", String(crackId));
     }
+    formData.set("direction", direction);
 
     setError(null);
     startTransition(async () => {
@@ -61,11 +63,11 @@ export default function CrackFields({
         />
       </label>
       <textarea
-        name="text"
-        placeholder="Caption"
+        placeholder="Optional: steer the joke, e.g. “make a joke about Lion Fund”"
         rows={3}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
+        value={direction}
+        onChange={(e) => setDirection(e.target.value)}
+        maxLength={300}
         className="rounded-md border border-black/10 bg-white p-2"
       />
       <button
@@ -77,6 +79,14 @@ export default function CrackFields({
         {isPending ? "Generating…" : "✨ Generate caption with AI"}
       </button>
       {error && <p className="text-sm text-red-700">{error}</p>}
+      <input type="hidden" name="text" value={text} />
+      <p className="rounded-md border border-black/10 p-2 text-sm">
+        {text || (
+          <span className="opacity-60">
+            Your AI caption will appear here.
+          </span>
+        )}
+      </p>
     </>
   );
 }
