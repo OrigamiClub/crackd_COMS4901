@@ -4,12 +4,16 @@
   --background: #fffcee;
   --foreground: #618a9e;
   --title: #d86e4e;
+  --sage: #6f9468;
+  --mustard: #b5822a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-title: var(--title);
+  --color-sage: var(--sage);
+  --color-mustard: var(--mustard);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

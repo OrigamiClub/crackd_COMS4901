@@ -5,13 +5,25 @@ import LikeButton from "./cracks/like-button";
 
 const pill =
   "flex h-10 items-center rounded-full border px-4 text-sm font-medium";
-const pillOff = `${pill} border-black/10 bg-foreground text-white`;
-const pillOn = `${pill} border-foreground bg-background text-foreground`;
 const pillAccent = `${pill} border-black/10 bg-title text-white`;
 
+// Each filter has its own palette color: filled when off, outlined when
+// active. Class names are written out in full so Tailwind generates them.
 const FILTERS = [
-  { key: "mine", label: "My Cracks", empty: "You haven't posted any cracks yet." },
-  { key: "liked", label: "Cracks I Like", empty: "You haven't liked any cracks yet." },
+  {
+    key: "mine",
+    label: "My Cracks",
+    empty: "You haven't posted any cracks yet.",
+    off: `${pill} border-black/10 bg-sage text-white`,
+    on: `${pill} border-sage bg-background text-sage`,
+  },
+  {
+    key: "liked",
+    label: "Cracks I Like",
+    empty: "You haven't liked any cracks yet.",
+    off: `${pill} border-black/10 bg-mustard text-white`,
+    on: `${pill} border-mustard bg-background text-mustard`,
+  },
 ] as const;
 
 export default async function Home({ searchParams }: PageProps<"/">) {
@@ -58,7 +70,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                   // Clicking the active filter goes back to all cracks.
                   href={active ? "/" : `/?filter=${f.key}`}
                   aria-current={active ? "page" : undefined}
-                  className={active ? pillOn : pillOff}
+                  className={active ? f.on : f.off}
                 >
                   {f.label}
                 </Link>
