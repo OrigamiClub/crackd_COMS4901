@@ -6,6 +6,7 @@
   --title: #d86e4e;
   --sage: #6f9468;
   --mustard: #b5822a;
+  --plum: #8a5a7a;
 }
 
 @theme inline {
@@ -14,6 +15,7 @@
   --color-title: var(--title);
   --color-sage: var(--sage);
   --color-mustard: var(--mustard);
+  --color-plum: var(--plum);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
