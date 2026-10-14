@@ -266,12 +266,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               )}
             </section>
             <section className="hidden min-h-0 flex-1 flex-col gap-3 rounded-lg border border-black/10 p-4 lg:flex dark:border-white/15">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="font-semibold">Humor map</h2>
-                <Link href="/humor" className="text-sm underline">
-                  Open →
+              <h2 className="font-semibold">
+                <Link href="/humor" className="hover:underline">
+                  Who laughs at what you laugh at →
                 </Link>
-              </div>
+              </h2>
               <NetworkGraph
                 nodes={nodes}
                 edges={edges}
@@ -279,9 +278,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 cracks={{}}
                 compact
               />
-              <Link href="/humor" className="text-xs opacity-75 hover:underline">
-                See your sense of humor and who shares it
-              </Link>
             </section>
             <Link
               href="/humor"
