@@ -144,34 +144,26 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     edges?: NetworkEdge[];
   };
 
-  const header = (
-    <div className="flex flex-wrap items-center justify-between gap-4">
-      <h1 className="text-[60px] font-light tracking-tight text-title">
-        cracking jokes in the city of new york
-      </h1>
-      <div className="flex flex-wrap items-center gap-3">
-        {user &&
-          FILTERS.filter((f) => f.key !== "activity").map((f) => {
-            const active = filter?.key === f.key;
-            return (
-              <Link
-                key={f.key}
-                // Clicking the active filter goes back to all cracks.
-                href={active ? "/" : `/?filter=${f.key}`}
-                aria-current={active ? "page" : undefined}
-                className={active ? f.on : f.off}
-              >
-                {f.label}
-              </Link>
-            );
-          })}
-        {user && (
-          <Link href="/cracks/new" className={pillAccent}>
-            + New Crack
+  // Filters and the new-crack button, above the feed.
+  const toolbar = user && (
+    <div className="flex flex-wrap items-center gap-3">
+      {FILTERS.filter((f) => f.key !== "activity").map((f) => {
+        const active = filter?.key === f.key;
+        return (
+          <Link
+            key={f.key}
+            // Clicking the active filter goes back to all cracks.
+            href={active ? "/" : `/?filter=${f.key}`}
+            aria-current={active ? "page" : undefined}
+            className={active ? f.on : f.off}
+          >
+            {f.label}
           </Link>
-        )}
-        <AccountButton />
-      </div>
+        );
+      })}
+      <Link href="/cracks/new" className={pillAccent}>
+        + New Crack
+      </Link>
     </div>
   );
 
@@ -217,78 +209,93 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       </>
     );
 
-  if (!user) {
-    return (
-      <main className="flex flex-1 flex-col gap-6 p-8">
-        {header}
-        {feed}
-      </main>
-    );
-  }
-
-  // Logged in: a dashboard sidebar with recent likes and the humor map. On
-  // narrow screens it sits between the header and the feed.
+  // A left sidebar holds the title, the account button and, for logged-in
+  // users, recent likes and the humor map; the feed fills the rest. On
+  // narrow screens the sidebar stacks above the feed, without the map.
   return (
-    <main className="grid flex-1 grid-cols-1 content-start gap-6 p-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-8">
-      <div className="lg:col-start-1">{header}</div>
+    <main className="grid flex-1 grid-cols-1 content-start gap-6 p-8 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-10">
       {/* On wide screens the sidebar fills the window height and the humor
-          map takes whatever room the recent likes leave. */}
-      <aside className="flex flex-col gap-6 lg:sticky lg:top-8 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100dvh-4rem)] lg:self-start">
-        <section className="flex shrink-0 flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 font-semibold">
-              Recent likes
-              {hasNew && (
-                <span
-                  aria-label="new"
-                  className="inline-block size-2 rounded-full bg-plum motion-safe:animate-pulse"
-                />
+          map takes whatever room the rest leaves. */}
+      <aside className="flex flex-col gap-6 lg:sticky lg:top-8 lg:h-[calc(100dvh-4rem)] lg:self-start">
+        <div className="flex flex-col items-start gap-4">
+          <h1 className="text-4xl leading-tight font-light tracking-tight text-title">
+            cracking jokes in the city of new york
+          </h1>
+          <AccountButton />
+        </div>
+        {!user ? (
+          <p className="text-sm">
+            Log in to like cracks, see who likes yours, and find your humor
+            match.
+          </p>
+        ) : (
+          <>
+            <section className="flex shrink-0 flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 font-semibold">
+                  Recent likes
+                  {hasNew && (
+                    <span
+                      aria-label="new"
+                      className="inline-block size-2 rounded-full bg-plum motion-safe:animate-pulse"
+                    />
+                  )}
+                </h2>
+                {(notifications?.length ?? 0) > 0 && (
+                  <Link href="/?filter=activity" className="text-sm underline">
+                    See all
+                  </Link>
+                )}
+              </div>
+              {(notifications?.length ?? 0) === 0 ? (
+                <p className="text-sm opacity-75">
+                  No one has liked your cracks yet — keep cracking.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {notifications?.map((n: LikeNotification, index: number) => (
+                    <LikeRow
+                      key={`${n.crack_id}-${n.liked_at}`}
+                      like={n}
+                      index={index}
+                      isNew={!seenAt || n.liked_at > seenAt}
+                      compact
+                    />
+                  ))}
+                </ul>
               )}
-            </h2>
-            {(notifications?.length ?? 0) > 0 && (
-              <Link href="/?filter=activity" className="text-sm underline">
-                See all
+            </section>
+            <section className="hidden min-h-0 flex-1 flex-col gap-3 rounded-lg border border-black/10 p-4 lg:flex dark:border-white/15">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="font-semibold">Humor map</h2>
+                <Link href="/humor" className="text-sm underline">
+                  Open →
+                </Link>
+              </div>
+              <NetworkGraph
+                nodes={nodes}
+                edges={edges}
+                meId={user.id}
+                cracks={{}}
+                compact
+              />
+              <Link href="/humor" className="text-xs opacity-75 hover:underline">
+                See your sense of humor and who shares it
               </Link>
-            )}
-          </div>
-          {(notifications?.length ?? 0) === 0 ? (
-            <p className="text-sm opacity-75">
-              No one has liked your cracks yet — keep cracking.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {notifications?.map((n: LikeNotification, index: number) => (
-                <LikeRow
-                  key={`${n.crack_id}-${n.liked_at}`}
-                  like={n}
-                  index={index}
-                  isNew={!seenAt || n.liked_at > seenAt}
-                  compact
-                />
-              ))}
-            </ul>
-          )}
-        </section>
-        <section className="flex min-h-0 flex-1 flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-semibold">Humor map</h2>
-            <Link href="/humor" className="text-sm underline">
-              Open →
+            </section>
+            <Link
+              href="/humor"
+              className="text-sm underline lg:hidden"
+            >
+              See your humor map →
             </Link>
-          </div>
-          <NetworkGraph
-            nodes={nodes}
-            edges={edges}
-            meId={user.id}
-            cracks={{}}
-            compact
-          />
-          <Link href="/humor" className="text-xs opacity-75 hover:underline">
-            See your sense of humor and who shares it
-          </Link>
-        </section>
+          </>
+        )}
       </aside>
-      <div className="flex flex-col gap-6 lg:col-start-1">{feed}</div>
+      <div className="flex flex-col gap-6">
+        {toolbar}
+        {feed}
+      </div>
     </main>
   );
 }
