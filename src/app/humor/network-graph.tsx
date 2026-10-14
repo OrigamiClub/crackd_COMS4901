@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   forceCenter,
   forceCollide,
@@ -31,10 +31,11 @@ export type NetworkEdge = {
 type SimNode = NetworkNode & SimulationNodeDatum;
 type SimLink = SimulationLinkDatum<SimNode> & NetworkEdge;
 
-const WIDTH = 640;
-const HEIGHT = 440;
-const RADIUS = 22;
-const ME_RADIUS = 30;
+// Full size for /humor; compact for the home page sidebar.
+const SIZES = {
+  full: { width: 640, height: 440, radius: 22, meRadius: 30, label: 13, charge: -260, link: 170 },
+  compact: { width: 320, height: 220, radius: 17, meRadius: 23, label: 12, charge: -180, link: 90 },
+};
 
 function displayName(node: NetworkNode) {
   return node.name || "Someone";
@@ -43,18 +44,53 @@ function displayName(node: NetworkNode) {
 // Force-directed graph of everyone who has liked a crack. Lines join people
 // who liked the same cracks (thicker = more in common); each ring is the
 // person's favorite humor style. Nodes can be dragged; clicking one shows
-// what you have in common.
+// what you have in common. `compact` draws just a small graph (no hover
+// text or details, but keeps the style legend) for the home page sidebar,
+// sized to fill whatever space its parent gives it.
 export default function NetworkGraph({
   nodes,
   edges,
   meId,
   cracks,
+  compact = false,
 }: {
   nodes: NetworkNode[];
   edges: NetworkEdge[];
   meId: string;
   cracks: Record<number, { text: string | null; img_url: string | null }>;
+  compact?: boolean;
 }) {
+  // In compact mode the drawing area matches the box it's given, so the
+  // graph fills the sidebar instead of keeping a fixed shape.
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState<{ width: number; height: number } | null>(null);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!compact || !el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.round(entry.contentRect.width);
+      const height = Math.round(entry.contentRect.height);
+      if (width > 0 && height > 0) {
+        setBox((prev) =>
+          prev?.width === width && prev?.height === height ? prev : { width, height }
+        );
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [compact]);
+  const size = useMemo(
+    () =>
+      compact
+        ? {
+            ...SIZES.compact,
+            ...(box ?? {}),
+            // Spread people out more when there's more room.
+            link: box ? Math.min(box.width, box.height) * 0.4 : SIZES.compact.link,
+          }
+        : SIZES.full,
+    [compact, box]
+  );
   const svgRef = useRef<SVGSVGElement>(null);
   const simulationRef = useRef<Simulation<SimNode, SimLink> | null>(null);
   const [simNodes, setSimNodes] = useState<SimNode[]>([]);
@@ -75,11 +111,11 @@ export default function NetworkGraph({
         "link",
         forceLink<SimNode, SimLink>(l)
           .id((d) => d.id)
-          .distance((d) => 170 - Math.min(d.shared, 5) * 18)
+          .distance((d) => size.link * (1 - Math.min(d.shared, 5) * 0.1))
       )
-      .force("charge", forceManyBody().strength(-260))
-      .force("center", forceCenter(WIDTH / 2, HEIGHT / 2))
-      .force("collide", forceCollide(ME_RADIUS + 8));
+      .force("charge", forceManyBody().strength(size.charge))
+      .force("center", forceCenter(size.width / 2, size.height / 2))
+      .force("collide", forceCollide(size.meRadius + 8));
     simulationRef.current = simulation;
 
     const reduceMotion = window.matchMedia(
@@ -93,8 +129,9 @@ export default function NetworkGraph({
 
     const update = () => {
       for (const node of n) {
-        node.x = Math.max(ME_RADIUS, Math.min(WIDTH - ME_RADIUS, node.x ?? 0));
-        node.y = Math.max(ME_RADIUS, Math.min(HEIGHT - ME_RADIUS, node.y ?? 0));
+        const pad = size.meRadius + size.label;
+        node.x = Math.max(pad, Math.min(size.width - pad, node.x ?? 0));
+        node.y = Math.max(size.meRadius, Math.min(size.height - pad, node.y ?? 0));
       }
       setSimNodes([...n]);
       setSimLinks([...l]);
@@ -105,7 +142,7 @@ export default function NetworkGraph({
     return () => {
       simulation.stop();
     };
-  }, [nodes, edges]);
+  }, [nodes, edges, size]);
 
   // Dragging: pin the node under the pointer and let the rest follow.
   function toSvgPoint(event: React.PointerEvent) {
@@ -139,7 +176,9 @@ export default function NetworkGraph({
 
   if (nodes.length < 2) {
     return (
-      <p className="rounded-lg border border-black/10 p-6 text-sm">
+      <p
+        className={`rounded-lg border border-black/10 text-sm ${compact ? "p-3" : "p-6"}`}
+      >
         The network needs at least two people with likes. Go like some cracks
         and drag a friend in.
       </p>
@@ -175,112 +214,122 @@ export default function NetworkGraph({
   );
 
   return (
-    <div className="flex flex-col gap-3">
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="w-full touch-none rounded-lg border border-black/10 bg-white/60 dark:border-white/15"
-        role="img"
-        aria-label="Network of users connected by cracks they both liked"
-      >
-        <defs>
-          {simNodes.map((node) => (
-            <clipPath key={node.id} id={`clip-${node.id}`}>
-              <circle r={node.id === meId ? ME_RADIUS : RADIUS} />
-            </clipPath>
-          ))}
-        </defs>
-        {simLinks.map((link) => {
-          const source = link.source as SimNode;
-          const target = link.target as SimNode;
-          const active =
-            hover === source.id ||
-            hover === target.id ||
-            selected === source.id ||
-            selected === target.id;
-          return (
-            <line
-              key={`${link.a}-${link.b}`}
-              x1={source.x}
-              y1={source.y}
-              x2={target.x}
-              y2={target.y}
-              stroke="var(--foreground)"
-              strokeOpacity={active ? 0.9 : 0.35}
-              strokeWidth={1.5 + Math.min(link.shared, 5) * 1.5}
-              strokeLinecap="round"
-            />
-          );
-        })}
-        {simNodes.map((node) => {
-          const isMe = node.id === meId;
-          const r = isMe ? ME_RADIUS : RADIUS;
-          const ring = styleInfo(node.topStyle)?.color ?? "#9ca3af";
-          return (
-            <g
-              key={node.id}
-              transform={`translate(${node.x ?? 0},${node.y ?? 0})`}
-              className="cursor-grab active:cursor-grabbing"
-              onPointerDown={(e) => handlePointerDown(e, node)}
-              onPointerMove={(e) => handlePointerMove(e, node)}
-              onPointerUp={() => handlePointerUp(node)}
-              onPointerEnter={() => setHover(node.id)}
-              onPointerLeave={() => setHover(null)}
-              onClick={() => setSelected(node.id === selected ? null : node.id)}
-            >
-              <title>{isMe ? "You" : displayName(node)}</title>
-              {node.profpic ? (
-                <image
-                  href={node.profpic}
-                  x={-r}
-                  y={-r}
-                  width={r * 2}
-                  height={r * 2}
-                  clipPath={`url(#clip-${node.id})`}
-                  preserveAspectRatio="xMidYMid slice"
-                />
-              ) : (
-                <>
-                  <circle r={r} fill={ring} />
-                  <text
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill="white"
-                    fontSize={r * 0.9}
-                  >
-                    {displayName(node)[0].toUpperCase()}
-                  </text>
-                </>
-              )}
-              <circle
-                r={r}
-                fill="none"
-                stroke={ring}
-                strokeWidth={4}
+    <div
+      className={
+        compact ? "flex min-h-0 flex-1 flex-col gap-2" : "flex flex-col gap-3"
+      }
+    >
+      <div ref={boxRef} className={compact ? "relative min-h-56 flex-1" : undefined}>
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${size.width} ${size.height}`}
+          className={`touch-none rounded-lg border border-black/10 bg-white/60 dark:border-white/15 ${
+            compact ? "absolute inset-0 h-full w-full" : "w-full"
+          }`}
+          role="img"
+          aria-label="Network of users connected by cracks they both liked"
+        >
+          <defs>
+            {simNodes.map((node) => (
+              <clipPath key={node.id} id={`clip-${node.id}`}>
+                <circle r={node.id === meId ? size.meRadius : size.radius} />
+              </clipPath>
+            ))}
+          </defs>
+          {simLinks.map((link) => {
+            const source = link.source as SimNode;
+            const target = link.target as SimNode;
+            const active =
+              hover === source.id ||
+              hover === target.id ||
+              selected === source.id ||
+              selected === target.id;
+            return (
+              <line
+                key={`${link.a}-${link.b}`}
+                x1={source.x}
+                y1={source.y}
+                x2={target.x}
+                y2={target.y}
+                stroke="var(--foreground)"
+                strokeOpacity={active ? 0.9 : 0.35}
+                strokeWidth={1.5 + Math.min(link.shared, 5) * 1.5}
+                strokeLinecap="round"
               />
-              {isMe && (
-                <circle r={r + 5} fill="none" stroke="var(--title)" strokeWidth={2.5} />
-              )}
-              <text
-                y={r + 16}
-                textAnchor="middle"
-                fontSize={13}
-                fill="var(--foreground)"
-                className="pointer-events-none select-none"
+            );
+          })}
+          {simNodes.map((node) => {
+            const isMe = node.id === meId;
+            const r = isMe ? size.meRadius : size.radius;
+            const ring = styleInfo(node.topStyle)?.color ?? "#9ca3af";
+            return (
+              <g
+                key={node.id}
+                transform={`translate(${node.x ?? 0},${node.y ?? 0})`}
+                className="cursor-grab active:cursor-grabbing"
+                onPointerDown={(e) => handlePointerDown(e, node)}
+                onPointerMove={(e) => handlePointerMove(e, node)}
+                onPointerUp={() => handlePointerUp(node)}
+                onPointerEnter={() => setHover(node.id)}
+                onPointerLeave={() => setHover(null)}
+                onClick={() => setSelected(node.id === selected ? null : node.id)}
               >
-                {isMe ? "You" : displayName(node)}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+                <title>{isMe ? "You" : displayName(node)}</title>
+                {node.profpic ? (
+                  <image
+                    href={node.profpic}
+                    x={-r}
+                    y={-r}
+                    width={r * 2}
+                    height={r * 2}
+                    clipPath={`url(#clip-${node.id})`}
+                    preserveAspectRatio="xMidYMid slice"
+                  />
+                ) : (
+                  <>
+                    <circle r={r} fill={ring} />
+                    <text
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fill="white"
+                      fontSize={r * 0.9}
+                    >
+                      {displayName(node)[0].toUpperCase()}
+                    </text>
+                  </>
+                )}
+                <circle
+                  r={r}
+                  fill="none"
+                  stroke={ring}
+                  strokeWidth={4}
+                />
+                {isMe && (
+                  <circle r={r + 5} fill="none" stroke="var(--title)" strokeWidth={2.5} />
+                )}
+                <text
+                  y={r + size.label + 3}
+                  textAnchor="middle"
+                  fontSize={size.label}
+                  fill="var(--foreground)"
+                  className="pointer-events-none select-none"
+                >
+                  {isMe ? "You" : displayName(node)}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
 
-      <p className="min-h-5 text-sm" aria-live="polite">
-        {hoverText}
-      </p>
+      {!compact && (
+        <p className="min-h-5 text-sm" aria-live="polite">
+          {hoverText}
+        </p>
+      )}
 
       {stylesShown.length > 0 && (
-        <div className="flex flex-wrap gap-3 text-xs">
+        <div className={`flex flex-wrap text-xs ${compact ? "gap-x-3 gap-y-1" : "gap-3"}`}>
           <span className="opacity-75">Ring = favorite style:</span>
           {stylesShown.map((s) => (
             <span key={s.key} className="flex items-center gap-1">
@@ -294,7 +343,7 @@ export default function NetworkGraph({
         </div>
       )}
 
-      {selectedNode && selectedNode.id !== meId && (
+      {!compact && selectedNode && selectedNode.id !== meId && (
         <div className="cascade-in rounded-lg border border-black/10 p-4 text-sm dark:border-white/15">
           <p className="font-semibold">
             You and {displayName(selectedNode)}
