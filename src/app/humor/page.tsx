@@ -80,6 +80,11 @@ export default async function HumorPage() {
     ? nodes.find((n) => n.id === (closest.a === user.id ? closest.b : closest.a))
     : null;
 
+  // The profile card is tinted with your favorite style's color (the same
+  // as your ring in the graph), or plum until that's known.
+  const myStyle = nodes.find((n) => n.id === user.id)?.topStyle;
+  const cardColor = styleInfo(myStyle)?.color ?? "var(--plum)";
+
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
       <div className="flex w-full items-center justify-between gap-4">
@@ -114,8 +119,21 @@ export default async function HumorPage() {
           )}
         </section>
 
-        <section className="flex flex-col gap-4 self-start rounded-lg border border-black/10 p-5 dark:border-white/15">
-          <h2 className="text-lg font-semibold">Your sense of humor</h2>
+        <section
+          className="flex flex-col gap-4 self-start rounded-lg border p-5"
+          style={{
+            backgroundColor: `color-mix(in srgb, ${cardColor} 22%, var(--background))`,
+            borderColor: `color-mix(in srgb, ${cardColor} 60%, transparent)`,
+          }}
+        >
+          <h2 className="text-lg font-semibold" style={{ color: cardColor }}>
+            Your sense of humor
+            {styleInfo(myStyle) && (
+              <span className="ml-2 text-sm font-normal opacity-80">
+                · mostly {styleInfo(myStyle)!.label.toLowerCase()}
+              </span>
+            )}
+          </h2>
 
           {humorProfile.data?.summary && (
             <p className="text-base italic">{humorProfile.data.summary}</p>
