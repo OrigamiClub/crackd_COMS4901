@@ -32,3 +32,53 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Buttons and pills lift on hover and squish when pressed. */
+@utility btn-pop {
+  transition-property: translate, scale, box-shadow;
+  transition-duration: 150ms;
+  &:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.12);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    &:hover:not(:disabled) {
+      translate: 0 -2px;
+    }
+    &:active:not(:disabled) {
+      scale: 0.95;
+    }
+  }
+}
+
+/* Items fade and slide in one after another; set --i to the item's index. */
+@media (prefers-reduced-motion: no-preference) {
+  .cascade-in {
+    animation: cascade-in 400ms ease-out backwards;
+    animation-delay: calc(min(var(--i, 0), 12) * 50ms);
+  }
+}
+
+@keyframes cascade-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}
+
+/* Like button: the heart pops and a few small hearts float away. */
+@keyframes heart-pop {
+  50% {
+    scale: 1.6;
+  }
+}
+
+@keyframes heart-float {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    translate: var(--dx) -28px;
+    scale: 0.6;
+  }
+}

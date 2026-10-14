@@ -35,7 +35,7 @@ export default async function EditCrackPage({
       <div className="flex w-full items-center justify-between gap-4">
         <Link
           href="/"
-          className="flex h-10 items-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
+          className="btn-pop flex h-10 items-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
         >
           ← Back to home
         </Link>

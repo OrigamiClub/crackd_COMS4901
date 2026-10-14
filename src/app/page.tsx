@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import AccountButton from "@/components/account-button";
-import LikeButton from "./cracks/like-button";
+import CrackTile from "./cracks/crack-tile";
 
 const pill =
-  "flex h-10 items-center rounded-full border px-4 text-sm font-medium";
+  "btn-pop flex h-10 items-center rounded-full border px-4 text-sm font-medium";
 const pillAccent = `${pill} border-black/10 bg-title text-white`;
 
 // Each filter has its own palette color: filled when off, outlined when
@@ -145,7 +145,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                   {f.key === "activity" && hasNew && !active && (
                     <span
                       aria-label="new"
-                      className="ml-2 inline-block size-2 rounded-full bg-white"
+                      className="ml-2 inline-block size-2 rounded-full bg-white motion-safe:animate-pulse"
                     />
                   )}
                 </Link>
@@ -162,11 +162,15 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       {filter && isEmpty && <p className="text-sm">{filter.empty}</p>}
       {filter?.key === "activity" && (
         <ul className="flex max-w-2xl flex-col gap-3">
-          {notifications?.map((n: LikeNotification) => {
+          {notifications?.map((n: LikeNotification, index: number) => {
             const isNew = !seenAt || n.liked_at > seenAt;
             const name = n.liker_first_name || "Someone";
             return (
-              <li key={`${n.crack_id}-${n.liked_at}`}>
+              <li
+                key={`${n.crack_id}-${n.liked_at}`}
+                className="cascade-in"
+                style={{ "--i": index } as React.CSSProperties}
+              >
                 <Link
                   href={`/cracks/${n.crack_id}/edit`}
                   className={`flex items-center gap-3 rounded-lg border p-3 ${
@@ -214,40 +218,18 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </ul>
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {cracks?.map((crack) => (
-          <figure
+        {cracks?.map((crack, index) => (
+          <CrackTile
             key={crack.id}
-            className="flex flex-col overflow-hidden rounded-lg border border-black/10 bg-foreground text-background dark:border-white/15"
-          >
-            {crack.img_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={crack.img_url}
-                alt={crack.text ?? ""}
-                className="aspect-square w-full object-cover"
-                loading="lazy"
-              />
-            )}
-            {crack.text && (
-              <figcaption className="p-3 text-sm">{crack.text}</figcaption>
-            )}
-            <div className="mt-auto flex items-center justify-between px-3 pb-3">
-              <LikeButton
-                crackId={crack.id}
-                count={crack.likes?.[0]?.count ?? 0}
-                liked={likedIds.has(crack.id)}
-                loggedIn={!!user}
-              />
-              {user && crack.creator_id === user.id && (
-                <Link
-                  href={`/cracks/${crack.id}/edit`}
-                  className="text-sm underline"
-                >
-                  Edit
-                </Link>
-              )}
-            </div>
-          </figure>
+            id={crack.id}
+            text={crack.text}
+            imgUrl={crack.img_url}
+            index={index}
+            likeCount={crack.likes?.[0]?.count ?? 0}
+            liked={likedIds.has(crack.id)}
+            loggedIn={!!user}
+            canEdit={!!user && crack.creator_id === user.id}
+          />
         ))}
       </div>
     </main>

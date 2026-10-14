@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 
 const pill =
-  "flex h-10 items-center gap-2 rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white";
+  "btn-pop flex h-10 items-center gap-2 rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white";
 
 // "Log in" pill, or the signed-in user's name/photo linking to their
 // profile. Pages place it in their own top row so it lines up with the

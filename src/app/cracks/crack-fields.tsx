@@ -157,13 +157,15 @@ export default function CrackFields({
           type="button"
           onClick={handleGenerate}
           disabled={!hasPicture || isPending}
-          className="self-start rounded-full border border-black/10 bg-sage px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="btn-pop self-start rounded-full border border-black/10 bg-sage px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
-          {isPending
-            ? "Hamsters are typing…"
-            : options.length > 0 || text
-              ? "🐹 Try three more"
-              : "🐹 Unleash the hamsters"}
+          {isPending ? (
+            <HamsterStatus />
+          ) : options.length > 0 || text ? (
+            "🐹 Try three more"
+          ) : (
+            "🐹 Unleash the hamsters"
+          )}
         </button>
         {error && <p className="text-sm text-red-700">{error}</p>}
         {options.length > 0 && (
@@ -177,12 +179,13 @@ export default function CrackFields({
                 choice?.requestId === requestId && choice?.index === index;
               return (
                 <button
-                  key={index}
+                  key={`${requestId}-${index}`}
                   type="button"
                   role="radio"
                   aria-checked={picked}
                   onClick={() => handlePick(index)}
-                  className={`rounded-md border p-2 text-left text-sm ${
+                  style={{ "--i": index * 2 } as React.CSSProperties}
+                  className={`cascade-in rounded-md border p-2 text-left text-sm transition-colors ${
                     picked
                       ? "border-sage bg-sage text-white"
                       : "border-black/10 bg-white hover:border-sage"
@@ -229,6 +232,33 @@ export default function CrackFields({
   );
 }
 
+const HAMSTER_STATUSES = [
+  "Hamsters are typing…",
+  "Hamsters are arguing…",
+  "Hamsters are consulting the Core…",
+  "Hamsters are workshopping…",
+  "Hamsters are laughing at their own jokes…",
+];
+
+// Rotating progress message while Gemini works, with a bouncing hamster.
+function HamsterStatus() {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setStep((n) => n + 1), 1800);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <span className="flex items-center gap-2">
+      <span aria-hidden className="inline-block motion-safe:animate-bounce">
+        🐹
+      </span>
+      {HAMSTER_STATUSES[step % HAMSTER_STATUSES.length]}
+    </span>
+  );
+}
+
 function SubmitButton({
   disabled,
   label,
@@ -243,7 +273,7 @@ function SubmitButton({
     <button
       type="submit"
       disabled={disabled || pending}
-      className="self-start rounded-full border border-black/10 bg-title px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+      className="btn-pop self-start rounded-full border border-black/10 bg-title px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
     >
       {pending ? pendingLabel : label}
     </button>
