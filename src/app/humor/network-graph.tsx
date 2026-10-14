@@ -223,8 +223,10 @@ export default function NetworkGraph({
         <svg
           ref={svgRef}
           viewBox={`0 0 ${size.width} ${size.height}`}
-          className={`touch-none rounded-lg border border-black/10 bg-white/60 dark:border-white/15 ${
-            compact ? "absolute inset-0 h-full w-full" : "w-full"
+          className={`touch-none rounded-lg bg-white/60 ${
+            compact
+              ? "absolute inset-0 h-full w-full border border-black/10 dark:border-white/15"
+              : "w-full"
           }`}
           role="img"
           aria-label="Network of users connected by cracks they both liked"

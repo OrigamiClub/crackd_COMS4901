@@ -2,10 +2,12 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import AccountButton from "@/components/account-button";
 import CrackTile from "./cracks/crack-tile";
+import CrackTint from "./cracks/crack-tint";
 import NetworkGraph, {
   type NetworkEdge,
   type NetworkNode,
 } from "./humor/network-graph";
+import { styleInfo } from "@/lib/humor-vocab";
 
 const pill =
   "btn-pop flex h-10 items-center rounded-full border px-4 text-sm font-medium";
@@ -129,6 +131,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   }
   const { data: cracks } =
     filter?.key === "activity" ? { data: null } : await query;
+  const latestLike: LikeNotification | undefined = notifications?.[0];
   const isEmpty =
     filter?.key === "activity" ? notifications?.length === 0 : cracks?.length === 0;
 
@@ -143,6 +146,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     nodes?: NetworkNode[];
     edges?: NetworkEdge[];
   };
+  // The map panel is tinted with the user's favorite style's color, like
+  // the profile card on /humor, or plum until that's known.
+  const mapColor =
+    styleInfo(nodes.find((n) => n.id === user?.id)?.topStyle)?.color ??
+    "var(--plum)";
 
   // Filters and the new-crack button, above the feed.
   const toolbar = user && (
@@ -209,6 +217,47 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       </>
     );
 
+  // Recent likes for the sidebar panel.
+  const recentLikes = (
+    <>
+      <div className="flex items-center justify-between gap-2">
+        <h2
+          className={`flex items-center gap-2 font-semibold ${latestLike ? "text-(--tint)" : ""}`}
+        >
+          Recent likes
+          {hasNew && (
+            <span
+              aria-label="new"
+              className={`inline-block size-2 rounded-full motion-safe:animate-pulse ${latestLike ? "bg-(--tint)" : "bg-plum"}`}
+            />
+          )}
+        </h2>
+        {(notifications?.length ?? 0) > 0 && (
+          <Link href="/?filter=activity" className="text-sm underline">
+            See all
+          </Link>
+        )}
+      </div>
+      {(notifications?.length ?? 0) === 0 ? (
+        <p className="text-sm opacity-75">
+          No one has liked your cracks yet — keep cracking.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {notifications?.map((n: LikeNotification, index: number) => (
+            <LikeRow
+              key={`${n.crack_id}-${n.liked_at}`}
+              like={n}
+              index={index}
+              isNew={!seenAt || n.liked_at > seenAt}
+              compact
+            />
+          ))}
+        </ul>
+      )}
+    </>
+  );
+
   // A left sidebar holds the title, the account button and, for logged-in
   // users, recent likes and the humor map; the feed fills the rest. On
   // narrow screens the sidebar stacks above the feed, without the map.
@@ -230,43 +279,28 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           </p>
         ) : (
           <>
-            <section className="flex shrink-0 flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="flex items-center gap-2 font-semibold">
-                  Recent likes
-                  {hasNew && (
-                    <span
-                      aria-label="new"
-                      className="inline-block size-2 rounded-full bg-plum motion-safe:animate-pulse"
-                    />
-                  )}
-                </h2>
-                {(notifications?.length ?? 0) > 0 && (
-                  <Link href="/?filter=activity" className="text-sm underline">
-                    See all
-                  </Link>
-                )}
-              </div>
-              {(notifications?.length ?? 0) === 0 ? (
-                <p className="text-sm opacity-75">
-                  No one has liked your cracks yet — keep cracking.
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-2">
-                  {notifications?.map((n: LikeNotification, index: number) => (
-                    <LikeRow
-                      key={`${n.crack_id}-${n.liked_at}`}
-                      like={n}
-                      index={index}
-                      isNew={!seenAt || n.liked_at > seenAt}
-                      compact
-                    />
-                  ))}
-                </ul>
-              )}
-            </section>
-            <section className="hidden min-h-0 flex-1 flex-col gap-3 rounded-lg border border-black/10 p-4 lg:flex dark:border-white/15">
-              <h2 className="font-semibold">
+            {latestLike ? (
+              // Tinted to match the most recently liked crack's tile.
+              <CrackTint
+                crackId={latestLike.crack_id}
+                imgUrl={latestLike.crack_img_url}
+                className="flex shrink-0 flex-col gap-3 p-4"
+              >
+                {recentLikes}
+              </CrackTint>
+            ) : (
+              <section className="flex shrink-0 flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
+                {recentLikes}
+              </section>
+            )}
+            <section
+              className="hidden min-h-0 flex-1 flex-col gap-3 rounded-lg border p-4 lg:flex"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${mapColor} 22%, var(--background))`,
+                borderColor: `color-mix(in srgb, ${mapColor} 60%, transparent)`,
+              }}
+            >
+              <h2 className="font-semibold" style={{ color: mapColor }}>
                 <Link href="/humor" className="hover:underline">
                   Who laughs at what you laugh at →
                 </Link>
