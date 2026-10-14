@@ -25,8 +25,9 @@ const COPY = {
 };
 
 // The three-step form body shared by the new and edit pages: pick a
-// picture, have Gemini write the caption (the text box only steers the
-// joke, e.g. "make a joke about Lion Fund"), then submit. On the edit page,
+// picture, have Gemini write three captions and pick one (the text box only
+// steers the joke, e.g. "make a joke about Lion Fund"), then submit. The
+// pick is sent along with the form so it can feed the humor profile. On the edit page,
 // `crackId` lets it caption the existing image when no new file is picked.
 // Must be rendered inside the page's <form>.
 export default function CrackFields({
@@ -44,6 +45,14 @@ export default function CrackFields({
   const photoRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(defaultText);
   const [direction, setDirection] = useState("");
+  // The latest batch of options, and which request/option the current
+  // caption came from (null when it wasn't picked from a batch).
+  const [options, setOptions] = useState<string[]>([]);
+  const [requestId, setRequestId] = useState<number | null>(null);
+  const [choice, setChoice] = useState<{
+    requestId: number;
+    index: number;
+  } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -61,8 +70,13 @@ export default function CrackFields({
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const photo = e.target.files?.[0];
     setPreviewUrl(photo ? URL.createObjectURL(photo) : null);
-    // A caption written for the old picture no longer fits a new one.
-    if (!isEdit) setText("");
+    // Captions written for the old picture no longer fit a new one.
+    setOptions([]);
+    setRequestId(null);
+    if (!isEdit) {
+      setText("");
+      setChoice(null);
+    }
   }
 
   function handleGenerate() {
@@ -78,12 +92,19 @@ export default function CrackFields({
     setError(null);
     startTransition(async () => {
       const result = await generateCaption(formData);
-      if ("caption" in result) {
-        setText(result.caption);
+      if ("captions" in result) {
+        setOptions(result.captions);
+        setRequestId(result.requestId);
       } else {
         setError(result.error);
       }
     });
+  }
+
+  function handlePick(index: number) {
+    if (requestId === null) return;
+    setText(options[index]);
+    setChoice({ requestId, index });
   }
 
   return (
@@ -140,15 +161,53 @@ export default function CrackFields({
         >
           {isPending
             ? "Hamsters are typing…"
-            : text
-              ? "🐹 Try another caption"
+            : options.length > 0 || text
+              ? "🐹 Try three more"
               : "🐹 Unleash the hamsters"}
         </button>
         {error && <p className="text-sm text-red-700">{error}</p>}
+        {options.length > 0 && (
+          <div
+            role="radiogroup"
+            aria-label="Pick a caption"
+            className="flex flex-col gap-2"
+          >
+            {options.map((option, index) => {
+              const picked =
+                choice?.requestId === requestId && choice?.index === index;
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  role="radio"
+                  aria-checked={picked}
+                  onClick={() => handlePick(index)}
+                  className={`rounded-md border p-2 text-left text-sm ${
+                    picked
+                      ? "border-sage bg-sage text-white"
+                      : "border-black/10 bg-white hover:border-sage"
+                  }`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <input type="hidden" name="text" value={text} />
+        <input
+          type="hidden"
+          name="caption_request_id"
+          value={choice?.requestId ?? ""}
+        />
+        <input type="hidden" name="caption_choice" value={choice?.index ?? ""} />
         <p className="rounded-md border border-black/10 p-2 text-sm" aria-live="polite">
           {text || (
-            <span className="opacity-60">Your caption will appear here.</span>
+            <span className="opacity-60">
+              {options.length > 0
+                ? "Pick one of the captions above."
+                : "Your caption will appear here."}
+            </span>
           )}
         </p>
       </Step>
@@ -158,7 +217,7 @@ export default function CrackFields({
         badgeClass="bg-title"
         title={copy.submit}
         locked={!text}
-        lockedHint="Get a caption from the hamsters first."
+        lockedHint="Get captions from the hamsters and pick one first."
       >
         <SubmitButton
           disabled={!text || isPending}

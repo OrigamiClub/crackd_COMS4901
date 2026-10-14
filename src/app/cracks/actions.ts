@@ -84,20 +84,27 @@ const CAPTION_LIMITS = [
 
 // Each model gets this long before we give up on it and try the next.
 const GEMINI_TIMEOUT_MS = 20 * 1000;
+// Pause before the second pass through GEMINI_MODELS.
+const GEMINI_RETRY_DELAY_MS = 2 * 1000;
 
 const CAPTION_PROMPT =
   "You write captions for a Columbia University / New York City meme board " +
-  "called \"Cracking Jokes in the City of New York\". Write one short, funny " +
-  "meme caption for this image. Reply with only the caption text — no quotes, " +
-  "hashtags, or explanation. The user has the option to provide additional direction afterward. If they do not, try to create a Columbia University-related caption of your own. Please don't be picky.";
+  "called \"Cracking Jokes in the City of New York\". Write three short, " +
+  "funny meme captions for this image, each in a clearly different style of " +
+  "humor (for example wordplay, absurdist, observational, self-deprecating). " +
+  "Reply with a JSON array of exactly three caption strings — no quotes " +
+  "inside the captions, hashtags, or explanation. The user has the option to provide additional direction afterward. If they do not, try to create a Columbia University-related caption of your own. Please don't be picky.";
 
-// Asks Gemini for a caption. The image is either a freshly chosen `photo`
+// Asks Gemini for three captions to choose from. The image is either a freshly chosen `photo`
 // file or, on the edit page, the stored image of the user's own meme `id`.
 // An optional `direction` (e.g. "make a joke about Lion Fund") steers the
-// joke. Returns an error message instead of throwing so the form can show it.
+// joke. The request is logged in caption_requests with its options, and its
+// id comes back so the form can report which option was picked (see
+// recordCaptionChoice). Returns an error message instead of throwing so the
+// form can show it.
 export async function generateCaption(
   formData: FormData
-): Promise<{ caption: string } | { error: string }> {
+): Promise<{ captions: string[]; requestId: number } | { error: string }> {
   const supabase = await createClient();
   const user = await requireUser(supabase);
 
@@ -160,17 +167,20 @@ export async function generateCaption(
     return checked;
   }
 
-  const { error: logError } = await supabase
+  const direction = formData.get("direction")?.toString().trim().slice(0, 300);
+
+  const { data: logged, error: logError } = await supabase
     .from("caption_requests")
-    .insert({ user_id: user.id });
-  if (logError) {
+    .insert({ user_id: user.id, direction: direction || null })
+    .select("id")
+    .single();
+  if (logError || !logged) {
     console.error("Couldn't log caption request", logError);
     return { error: "Caption generation is unavailable right now." };
   }
 
   const data = Buffer.from(await image.arrayBuffer()).toString("base64");
 
-  const direction = formData.get("direction")?.toString().trim().slice(0, 300);
   const prompt = direction
     ? `${CAPTION_PROMPT}\n\nThe poster's direction for the joke: ${direction}`
     : CAPTION_PROMPT;
@@ -184,10 +194,20 @@ export async function generateCaption(
         ],
       },
     ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: { type: "ARRAY", items: { type: "STRING" } },
+    },
   });
 
+  // Overloads are usually brief, so if every model is busy we wait a
+  // moment and go through the list once more.
+  const attempts = [...GEMINI_MODELS, ...GEMINI_MODELS];
   let response: Response | null = null;
-  for (const model of GEMINI_MODELS) {
+  for (const [i, model] of attempts.entries()) {
+    if (i === GEMINI_MODELS.length) {
+      await new Promise((resolve) => setTimeout(resolve, GEMINI_RETRY_DELAY_MS));
+    }
     try {
       response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -215,20 +235,72 @@ export async function generateCaption(
 
   if (!response?.ok) {
     console.error("Gemini error", response?.status, await response?.text());
+    if (response?.status === 429 || response?.status === 503) {
+      return { error: "Gemini is swamped right now. Try again in a minute." };
+    }
     return { error: "Gemini couldn't generate a caption. Try again." };
   }
 
   const result = await response.json();
-  const caption = result.candidates?.[0]?.content?.parts
+  const reply = result.candidates?.[0]?.content?.parts
     ?.map((part: { text?: string }) => part.text ?? "")
-    .join("")
-    .trim();
+    .join("");
 
-  if (!caption) {
-    return { error: "Gemini didn't return a caption. Try again." };
+  let captions: string[] = [];
+  try {
+    const parsed: unknown = JSON.parse(reply ?? "");
+    if (Array.isArray(parsed)) {
+      captions = parsed
+        .filter((c): c is string => typeof c === "string")
+        .map((c) => c.trim())
+        .filter(Boolean)
+        .slice(0, 3);
+    }
+  } catch {
+    console.error("Gemini returned non-JSON captions", reply);
   }
 
-  return { caption };
+  if (captions.length === 0) {
+    return { error: "Gemini didn't return any captions. Try again." };
+  }
+
+  const { error: optionsError } = await supabase
+    .from("caption_requests")
+    .update({ options: captions })
+    .eq("id", logged.id);
+  if (optionsError) {
+    console.error("Couldn't save caption options", optionsError);
+  }
+
+  return { captions, requestId: logged.id };
+}
+
+// Marks which generated option ended up on a saved crack, for later humor
+// analysis. Best-effort: a failure here shouldn't block posting.
+async function recordCaptionChoice(
+  supabase: SupabaseClient,
+  userId: string,
+  formData: FormData,
+  crackId: number
+) {
+  const requestId = Number(formData.get("caption_request_id"));
+  const chosenIndex = Number(formData.get("caption_choice"));
+  if (
+    !Number.isInteger(requestId) ||
+    requestId <= 0 ||
+    ![0, 1, 2].includes(chosenIndex)
+  ) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("caption_requests")
+    .update({ chosen_index: chosenIndex, crack_id: crackId })
+    .eq("id", requestId)
+    .eq("user_id", userId);
+  if (error) {
+    console.error("Couldn't record caption choice", error);
+  }
 }
 
 export async function createCrack(formData: FormData) {
@@ -248,14 +320,18 @@ export async function createCrack(formData: FormData) {
 
   const imgUrl = await uploadCrackImage(supabase, user.id, photo);
 
-  const { error } = await supabase
+  const { data: created, error } = await supabase
     .from("cracks")
-    .insert({ text, img_url: imgUrl, creator_id: user.id });
+    .insert({ text, img_url: imgUrl, creator_id: user.id })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !created) {
     await removeCrackImage(supabase, imgUrl);
-    throw new Error(error.message);
+    throw new Error(error?.message ?? "Couldn't save the crack.");
   }
+
+  await recordCaptionChoice(supabase, user.id, formData, created.id);
 
   revalidatePath("/");
   redirect("/");
@@ -306,6 +382,8 @@ export async function updateCrack(formData: FormData) {
   if (updates.img_url) {
     await removeCrackImage(supabase, existing.img_url);
   }
+
+  await recordCaptionChoice(supabase, user.id, formData, data[0].id);
 
   revalidatePath("/");
   redirect("/");
