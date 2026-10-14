@@ -31,10 +31,11 @@ export type NetworkEdge = {
 type SimNode = NetworkNode & SimulationNodeDatum;
 type SimLink = SimulationLinkDatum<SimNode> & NetworkEdge;
 
-const WIDTH = 640;
-const HEIGHT = 440;
-const RADIUS = 22;
-const ME_RADIUS = 30;
+// Full size for /humor; compact for the home page sidebar.
+const SIZES = {
+  full: { width: 640, height: 440, radius: 22, meRadius: 30, label: 13, charge: -260, link: 170 },
+  compact: { width: 320, height: 220, radius: 14, meRadius: 19, label: 11, charge: -140, link: 90 },
+};
 
 function displayName(node: NetworkNode) {
   return node.name || "Someone";
@@ -43,18 +44,22 @@ function displayName(node: NetworkNode) {
 // Force-directed graph of everyone who has liked a crack. Lines join people
 // who liked the same cracks (thicker = more in common); each ring is the
 // person's favorite humor style. Nodes can be dragged; clicking one shows
-// what you have in common.
+// what you have in common. `compact` draws just a small graph (no hover
+// text, legend or details) for the home page sidebar.
 export default function NetworkGraph({
   nodes,
   edges,
   meId,
   cracks,
+  compact = false,
 }: {
   nodes: NetworkNode[];
   edges: NetworkEdge[];
   meId: string;
   cracks: Record<number, { text: string | null; img_url: string | null }>;
+  compact?: boolean;
 }) {
+  const size = compact ? SIZES.compact : SIZES.full;
   const svgRef = useRef<SVGSVGElement>(null);
   const simulationRef = useRef<Simulation<SimNode, SimLink> | null>(null);
   const [simNodes, setSimNodes] = useState<SimNode[]>([]);
@@ -75,11 +80,11 @@ export default function NetworkGraph({
         "link",
         forceLink<SimNode, SimLink>(l)
           .id((d) => d.id)
-          .distance((d) => 170 - Math.min(d.shared, 5) * 18)
+          .distance((d) => size.link * (1 - Math.min(d.shared, 5) * 0.1))
       )
-      .force("charge", forceManyBody().strength(-260))
-      .force("center", forceCenter(WIDTH / 2, HEIGHT / 2))
-      .force("collide", forceCollide(ME_RADIUS + 8));
+      .force("charge", forceManyBody().strength(size.charge))
+      .force("center", forceCenter(size.width / 2, size.height / 2))
+      .force("collide", forceCollide(size.meRadius + 8));
     simulationRef.current = simulation;
 
     const reduceMotion = window.matchMedia(
@@ -93,8 +98,9 @@ export default function NetworkGraph({
 
     const update = () => {
       for (const node of n) {
-        node.x = Math.max(ME_RADIUS, Math.min(WIDTH - ME_RADIUS, node.x ?? 0));
-        node.y = Math.max(ME_RADIUS, Math.min(HEIGHT - ME_RADIUS, node.y ?? 0));
+        const pad = size.meRadius + size.label;
+        node.x = Math.max(pad, Math.min(size.width - pad, node.x ?? 0));
+        node.y = Math.max(size.meRadius, Math.min(size.height - pad, node.y ?? 0));
       }
       setSimNodes([...n]);
       setSimLinks([...l]);
@@ -105,7 +111,7 @@ export default function NetworkGraph({
     return () => {
       simulation.stop();
     };
-  }, [nodes, edges]);
+  }, [nodes, edges, size]);
 
   // Dragging: pin the node under the pointer and let the rest follow.
   function toSvgPoint(event: React.PointerEvent) {
@@ -139,7 +145,9 @@ export default function NetworkGraph({
 
   if (nodes.length < 2) {
     return (
-      <p className="rounded-lg border border-black/10 p-6 text-sm">
+      <p
+        className={`rounded-lg border border-black/10 text-sm ${compact ? "p-3" : "p-6"}`}
+      >
         The network needs at least two people with likes. Go like some cracks
         and drag a friend in.
       </p>
@@ -178,7 +186,7 @@ export default function NetworkGraph({
     <div className="flex flex-col gap-3">
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        viewBox={`0 0 ${size.width} ${size.height}`}
         className="w-full touch-none rounded-lg border border-black/10 bg-white/60 dark:border-white/15"
         role="img"
         aria-label="Network of users connected by cracks they both liked"
@@ -186,7 +194,7 @@ export default function NetworkGraph({
         <defs>
           {simNodes.map((node) => (
             <clipPath key={node.id} id={`clip-${node.id}`}>
-              <circle r={node.id === meId ? ME_RADIUS : RADIUS} />
+              <circle r={node.id === meId ? size.meRadius : size.radius} />
             </clipPath>
           ))}
         </defs>
@@ -214,7 +222,7 @@ export default function NetworkGraph({
         })}
         {simNodes.map((node) => {
           const isMe = node.id === meId;
-          const r = isMe ? ME_RADIUS : RADIUS;
+          const r = isMe ? size.meRadius : size.radius;
           const ring = styleInfo(node.topStyle)?.color ?? "#9ca3af";
           return (
             <g
@@ -262,9 +270,9 @@ export default function NetworkGraph({
                 <circle r={r + 5} fill="none" stroke="var(--title)" strokeWidth={2.5} />
               )}
               <text
-                y={r + 16}
+                y={r + size.label + 3}
                 textAnchor="middle"
-                fontSize={13}
+                fontSize={size.label}
                 fill="var(--foreground)"
                 className="pointer-events-none select-none"
               >
@@ -275,11 +283,13 @@ export default function NetworkGraph({
         })}
       </svg>
 
-      <p className="min-h-5 text-sm" aria-live="polite">
-        {hoverText}
-      </p>
+      {!compact && (
+        <p className="min-h-5 text-sm" aria-live="polite">
+          {hoverText}
+        </p>
+      )}
 
-      {stylesShown.length > 0 && (
+      {!compact && stylesShown.length > 0 && (
         <div className="flex flex-wrap gap-3 text-xs">
           <span className="opacity-75">Ring = favorite style:</span>
           {stylesShown.map((s) => (
@@ -294,7 +304,7 @@ export default function NetworkGraph({
         </div>
       )}
 
-      {selectedNode && selectedNode.id !== meId && (
+      {!compact && selectedNode && selectedNode.id !== meId && (
         <div className="cascade-in rounded-lg border border-black/10 p-4 text-sm dark:border-white/15">
           <p className="font-semibold">
             You and {displayName(selectedNode)}
