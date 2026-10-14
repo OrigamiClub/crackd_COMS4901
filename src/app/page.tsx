@@ -229,10 +229,12 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   // Logged in: a dashboard sidebar with recent likes and the humor map. On
   // narrow screens it sits between the header and the feed.
   return (
-    <main className="grid flex-1 grid-cols-1 content-start gap-6 p-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-8">
+    <main className="grid flex-1 grid-cols-1 content-start gap-6 p-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-8">
       <div className="lg:col-start-1">{header}</div>
-      <aside className="flex flex-col gap-6 lg:sticky lg:top-8 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
-        <section className="flex flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
+      {/* On wide screens the sidebar fills the window height and the humor
+          map takes whatever room the recent likes leave. */}
+      <aside className="flex flex-col gap-6 lg:sticky lg:top-8 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100dvh-4rem)] lg:self-start">
+        <section className="flex shrink-0 flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 font-semibold">
               Recent likes
@@ -267,7 +269,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </ul>
           )}
         </section>
-        <section className="flex flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
+        <section className="flex min-h-0 flex-1 flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-semibold">Humor map</h2>
             <Link href="/humor" className="text-sm underline">
