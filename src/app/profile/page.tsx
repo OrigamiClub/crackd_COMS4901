@@ -28,7 +28,7 @@ export default async function ProfilePage() {
       <div className="flex w-full items-center justify-between gap-4">
         <Link
           href="/"
-          className="flex h-10 items-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
+          className="btn-pop flex h-10 items-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
         >
           ← Back to home
         </Link>
@@ -74,7 +74,7 @@ export default async function ProfilePage() {
         </div>
         <button
           type="submit"
-          className="flex h-10 items-center justify-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
+          className="btn-pop flex h-10 items-center justify-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
         >
           Save
         </button>
@@ -82,7 +82,7 @@ export default async function ProfilePage() {
       <form action="/api/auth/logout" method="POST">
         <button
           type="submit"
-          className="flex h-10 items-center rounded-full border border-foreground px-4 text-sm font-medium text-foreground"
+          className="btn-pop flex h-10 items-center rounded-full border border-foreground px-4 text-sm font-medium text-foreground"
         >
           Log out
         </button>
