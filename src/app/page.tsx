@@ -152,6 +152,14 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               );
             })}
           {user && (
+            <Link
+              href="/humor"
+              className={`${pill} border-black/10 bg-foreground text-white`}
+            >
+              Humor Network
+            </Link>
+          )}
+          {user && (
             <Link href="/cracks/new" className={pillAccent}>
               + New Crack
             </Link>
@@ -217,7 +225,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           })}
         </ul>
       )}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 lg:grid-cols-5">
         {cracks?.map((crack, index) => (
           <CrackTile
             key={crack.id}

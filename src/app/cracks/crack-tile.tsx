@@ -107,8 +107,8 @@ export default function CrackTile({
     };
   }, [imgUrl]);
 
-  // A fixed tilt between -1.5° and 1.5° per crack, so it doesn't jump around.
-  const tilt = ((id * 37) % 5 - 2) * 0.75;
+  // A fixed tilt between -2.5° and 2.5° per crack, so it doesn't jump around.
+  const tilt = ((id * 37) % 5 - 2) * 1.25;
 
   return (
     <figure

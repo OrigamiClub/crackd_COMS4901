@@ -2,16 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { checkImage } from "@/lib/images";
+import { checkImage, fetchOwnCrackImage } from "@/lib/images";
+import { callGemini } from "@/lib/gemini";
+import { tagCracks, type CaptionOption } from "@/lib/humor";
+import { STYLES, STYLE_KEYS } from "@/lib/humor-vocab";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 const BUCKET = "cracks";
 const PUBLIC_PREFIX = `/storage/v1/object/public/${BUCKET}/`;
-// Only images in our own bucket are fetched server-side, so a crack row
-// edited to point elsewhere can't make the server request arbitrary URLs.
-const OWN_IMAGE_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL}${PUBLIC_PREFIX}`;
 
 async function requireUser(supabase: SupabaseClient) {
   const {
@@ -69,47 +70,47 @@ function getPhoto(formData: FormData) {
   return photo && photo.size > 0 ? photo : null;
 }
 
-// Tried in order; we move on to the next one only when a model is
-// overloaded (429/503), which happens often with the newest Flash.
-const GEMINI_MODELS = [
-  process.env.GEMINI_MODEL ?? "gemini-3.8-flash",
-  "gemini-3.5-flash",
-];
-
 // Per-user caption limits, enforced with the caption_requests log.
 const CAPTION_LIMITS = [
   { windowMs: 60 * 1000, max: 5, message: "Slow down — the hamsters need a minute." },
   { windowMs: 24 * 60 * 60 * 1000, max: 50, message: "The hamsters are done for today. Try again tomorrow." },
 ];
 
-// Each model gets this long before we give up on it and try the next.
-const GEMINI_TIMEOUT_MS = 20 * 1000;
-// Pause before the second pass through GEMINI_MODELS.
-const GEMINI_RETRY_DELAY_MS = 2 * 1000;
+const CAPTION_SCHEMA = {
+  type: "ARRAY",
+  items: {
+    type: "OBJECT",
+    properties: {
+      caption: { type: "STRING" },
+      style: { type: "STRING", enum: STYLE_KEYS },
+    },
+    required: ["caption", "style"],
+  },
+};
 
 const CAPTION_PROMPT =
   "You write captions for a Columbia University / New York City meme board " +
   "called \"Cracking Jokes in the City of New York\". Write three short, " +
   "funny meme captions for this image, each in a clearly different style of " +
-  "humor (for example wordplay, absurdist, observational, self-deprecating). " +
-  "Reply with a JSON array of exactly three caption strings — no quotes " +
+  `humor, chosen from: ${STYLES.map((s) => `${s.key} (${s.label})`).join(", ")}. ` +
+  "For each, give the caption and the style key it uses — no quotes " +
   "inside the captions, hashtags, or explanation. The user has the option to provide additional direction afterward. If they do not, try to create a Columbia University-related caption of your own. Please don't be picky.";
 
 // Asks Gemini for three captions to choose from. The image is either a freshly chosen `photo`
 // file or, on the edit page, the stored image of the user's own meme `id`.
 // An optional `direction` (e.g. "make a joke about Lion Fund") steers the
-// joke. The request is logged in caption_requests with its options, and its
+// joke. Each caption comes with its humor style. The request is logged in
+// caption_requests with its options, and its
 // id comes back so the form can report which option was picked (see
 // recordCaptionChoice). Returns an error message instead of throwing so the
 // form can show it.
 export async function generateCaption(
   formData: FormData
-): Promise<{ captions: string[]; requestId: number } | { error: string }> {
+): Promise<{ captions: CaptionOption[]; requestId: number } | { error: string }> {
   const supabase = await createClient();
   const user = await requireUser(supabase);
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  if (!process.env.GEMINI_API_KEY) {
     return { error: "Caption generation isn't configured (GEMINI_API_KEY)." };
   }
 
@@ -130,9 +131,19 @@ export async function generateCaption(
     }
   }
 
-  let image: Blob | null = getPhoto(formData);
+  let image: { data: string; type: string };
+  const photo = getPhoto(formData);
 
-  if (!image) {
+  if (photo) {
+    const checked = await checkImage(photo);
+    if ("error" in checked) {
+      return checked;
+    }
+    image = {
+      data: Buffer.from(await photo.arrayBuffer()).toString("base64"),
+      type: checked.type,
+    };
+  } else {
     const id = formData.get("id")?.toString();
     const { data: crack } = id
       ? await supabase
@@ -147,24 +158,11 @@ export async function generateCaption(
       return { error: "Choose an image first." };
     }
 
-    if (!crack.img_url.startsWith(OWN_IMAGE_PREFIX)) {
-      return {
-        error: "This picture is hosted elsewhere — choose it again to caption it.",
-      };
+    const fetched = await fetchOwnCrackImage(crack.img_url);
+    if ("error" in fetched) {
+      return fetched;
     }
-
-    const response = await fetch(crack.img_url, {
-      signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-    });
-    if (!response.ok) {
-      return { error: "Couldn't load the current image." };
-    }
-    image = await response.blob();
-  }
-
-  const checked = await checkImage(image);
-  if ("error" in checked) {
-    return checked;
+    image = fetched;
   }
 
   const direction = formData.get("direction")?.toString().trim().slice(0, 300);
@@ -179,86 +177,31 @@ export async function generateCaption(
     return { error: "Caption generation is unavailable right now." };
   }
 
-  const data = Buffer.from(await image.arrayBuffer()).toString("base64");
-
   const prompt = direction
     ? `${CAPTION_PROMPT}\n\nThe poster's direction for the joke: ${direction}`
     : CAPTION_PROMPT;
 
-  const body = JSON.stringify({
-    contents: [
-      {
-        parts: [
-          { inline_data: { mime_type: checked.type, data } },
-          { text: prompt },
-        ],
-      },
+  const result = await callGemini(
+    [
+      { inline_data: { mime_type: image.type, data: image.data } },
+      { text: prompt },
     ],
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: { type: "ARRAY", items: { type: "STRING" } },
-    },
-  });
-
-  // Overloads are usually brief, so if every model is busy we wait a
-  // moment and go through the list once more.
-  const attempts = [...GEMINI_MODELS, ...GEMINI_MODELS];
-  let response: Response | null = null;
-  for (const [i, model] of attempts.entries()) {
-    if (i === GEMINI_MODELS.length) {
-      await new Promise((resolve) => setTimeout(resolve, GEMINI_RETRY_DELAY_MS));
-    }
-    try {
-      response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
-          },
-          body,
-          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-        }
-      );
-    } catch (error) {
-      // Timed out or network failure: try the next model.
-      console.error(`Gemini ${model} request failed`, error);
-      response = null;
-      continue;
-    }
-
-    if (response.status !== 429 && response.status !== 503) {
-      break;
-    }
+    CAPTION_SCHEMA
+  );
+  if ("error" in result) {
+    return result;
   }
 
-  if (!response?.ok) {
-    console.error("Gemini error", response?.status, await response?.text());
-    if (response?.status === 429 || response?.status === 503) {
-      return { error: "Gemini is swamped right now. Try again in a minute." };
-    }
-    return { error: "Gemini couldn't generate a caption. Try again." };
-  }
-
-  const result = await response.json();
-  const reply = result.candidates?.[0]?.content?.parts
-    ?.map((part: { text?: string }) => part.text ?? "")
-    .join("");
-
-  let captions: string[] = [];
-  try {
-    const parsed: unknown = JSON.parse(reply ?? "");
-    if (Array.isArray(parsed)) {
-      captions = parsed
-        .filter((c): c is string => typeof c === "string")
-        .map((c) => c.trim())
-        .filter(Boolean)
-        .slice(0, 3);
-    }
-  } catch {
-    console.error("Gemini returned non-JSON captions", reply);
-  }
+  const captions: CaptionOption[] = (Array.isArray(result.json) ? result.json : [])
+    .map((item: { caption?: unknown; style?: unknown }) => ({
+      caption: typeof item?.caption === "string" ? item.caption.trim() : "",
+      style:
+        typeof item?.style === "string" && STYLE_KEYS.includes(item.style)
+          ? item.style
+          : null,
+    }))
+    .filter((option) => option.caption)
+    .slice(0, 3);
 
   if (captions.length === 0) {
     return { error: "Gemini didn't return any captions. Try again." };
@@ -332,6 +275,7 @@ export async function createCrack(formData: FormData) {
   }
 
   await recordCaptionChoice(supabase, user.id, formData, created.id);
+  after(() => tagCracks({ ids: [created.id] }));
 
   revalidatePath("/");
   redirect("/");
@@ -384,6 +328,7 @@ export async function updateCrack(formData: FormData) {
   }
 
   await recordCaptionChoice(supabase, user.id, formData, data[0].id);
+  after(() => tagCracks({ ids: [data[0].id] }));
 
   revalidatePath("/");
   redirect("/");
