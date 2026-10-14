@@ -96,7 +96,7 @@ export default async function HumorPage() {
       </h1>
 
       <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
-        <section className="flex flex-col gap-3">
+        <section className="flex flex-col gap-4 self-start rounded-lg border border-black/10 p-5 dark:border-white/15">
           <h2 className="text-lg font-semibold">Who laughs at what you laugh at</h2>
           <NetworkGraph
             nodes={nodes}
