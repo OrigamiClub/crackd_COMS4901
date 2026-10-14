@@ -39,3 +39,6 @@ create policy "Users can log their own caption requests"
 on public.caption_requests for insert
 to authenticated
 with check (user_id = auth.uid());
+
+-- Make the API pick up the new table right away.
+notify pgrst, 'reload schema';
