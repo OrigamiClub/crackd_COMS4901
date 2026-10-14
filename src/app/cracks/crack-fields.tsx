@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { generateCaption } from "./actions";
+import type { CaptionOption } from "@/lib/humor";
+import { styleInfo } from "@/lib/humor-vocab";
 import Step from "./step";
 
 const COPY = {
@@ -47,7 +49,7 @@ export default function CrackFields({
   const [direction, setDirection] = useState("");
   // The latest batch of options, and which request/option the current
   // caption came from (null when it wasn't picked from a batch).
-  const [options, setOptions] = useState<string[]>([]);
+  const [options, setOptions] = useState<CaptionOption[]>([]);
   const [requestId, setRequestId] = useState<number | null>(null);
   const [choice, setChoice] = useState<{
     requestId: number;
@@ -103,7 +105,7 @@ export default function CrackFields({
 
   function handlePick(index: number) {
     if (requestId === null) return;
-    setText(options[index]);
+    setText(options[index].caption);
     setChoice({ requestId, index });
   }
 
@@ -185,13 +187,16 @@ export default function CrackFields({
                   aria-checked={picked}
                   onClick={() => handlePick(index)}
                   style={{ "--i": index * 2 } as React.CSSProperties}
-                  className={`cascade-in rounded-md border p-2 text-left text-sm transition-colors ${
+                  className={`cascade-in flex items-start justify-between gap-3 rounded-md border p-2 text-left text-sm transition-colors ${
                     picked
                       ? "border-sage bg-sage text-white"
                       : "border-black/10 bg-white hover:border-sage"
                   }`}
                 >
-                  {option}
+                  <span>{option.caption}</span>
+                  {option.style && (
+                    <StyleChip style={option.style} />
+                  )}
                 </button>
               );
             })}
@@ -229,6 +234,20 @@ export default function CrackFields({
         />
       </Step>
     </>
+  );
+}
+
+// Small colored label for a caption's humor style.
+function StyleChip({ style }: { style: string }) {
+  const info = styleInfo(style);
+  if (!info) return null;
+  return (
+    <span
+      style={{ backgroundColor: info.color }}
+      className="shrink-0 rounded-full px-2 py-0.5 text-xs whitespace-nowrap text-white"
+    >
+      {info.label}
+    </span>
   );
 }
 

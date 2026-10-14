@@ -51,3 +51,35 @@ export async function checkImage(
 
   return { type: match.type, extension: match.extension };
 }
+
+// Only images in our own crack bucket are fetched server-side, so a crack
+// row edited to point elsewhere can't make the server request arbitrary
+// URLs.
+export const OWN_CRACK_IMAGE_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/cracks/`;
+
+const FETCH_TIMEOUT_MS = 20 * 1000;
+
+// Downloads and checks a stored crack image, ready to send to Gemini.
+export async function fetchOwnCrackImage(
+  url: string
+): Promise<{ data: string; type: string } | { error: string }> {
+  if (!url.startsWith(OWN_CRACK_IMAGE_PREFIX)) {
+    return { error: "This picture is hosted elsewhere — choose it again to caption it." };
+  }
+
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    return { error: "Couldn't load the current image." };
+  }
+
+  const image = await response.blob();
+  const checked = await checkImage(image);
+  if ("error" in checked) {
+    return checked;
+  }
+
+  const data = Buffer.from(await image.arrayBuffer()).toString("base64");
+  return { data, type: checked.type };
+}

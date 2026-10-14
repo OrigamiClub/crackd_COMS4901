@@ -32,7 +32,15 @@ export default async function ProfilePage() {
         >
           ← Back to home
         </Link>
-        <AccountButton />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/humor"
+            className="btn-pop flex h-10 items-center rounded-full border border-black/10 bg-plum px-4 text-sm font-medium text-white"
+          >
+            Your sense of humor →
+          </Link>
+          <AccountButton />
+        </div>
       </div>
       <h1 className="max-w-2xl text-center text-[40px] leading-tight font-light tracking-tight text-title">
         we promise not to sell your information to Facebook
