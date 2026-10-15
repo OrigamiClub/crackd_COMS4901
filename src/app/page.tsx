@@ -9,9 +9,6 @@ import NetworkGraph, {
 } from "./humor/network-graph";
 import { styleInfo } from "@/lib/humor-vocab";
 
-const newCrackButton =
-  "btn-pop flex h-10 items-center rounded-full border border-black/10 bg-title px-4 text-sm font-medium text-white";
-
 // Feed views. They share one neutral tab style so "+ New Crack" stays the
 // only highlighted action; "activity" is reached from the sidebar instead.
 const FILTERS = [
@@ -59,6 +56,19 @@ function timeAgo(iso: string) {
     }
   }
   return "just now";
+}
+
+const SHORT_UNITS = { year: "y", month: "mo", week: "w", day: "d", hour: "h", minute: "m" };
+
+// "3h", "2d", "now": for the narrow sidebar.
+function shortTimeAgo(iso: string) {
+  const seconds = (Date.now() - new Date(iso).getTime()) / 1000;
+  for (const { unit, seconds: size } of TIME_UNITS) {
+    if (seconds >= size) {
+      return `${Math.floor(seconds / size)}${SHORT_UNITS[unit]}`;
+    }
+  }
+  return "now";
 }
 
 type LikeNotification = {
@@ -178,11 +188,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         <span />
       )}
       <div className="flex items-center gap-3">
-        {user && (
-          <Link href="/cracks/new" className={newCrackButton}>
-            + New Crack
-          </Link>
-        )}
+        {/* Visitors see it too; the form sends them to log in first. */}
+        <Link href="/cracks/new" className="btn-primary">
+          + New Crack
+        </Link>
         <AccountButton />
       </div>
     </nav>
@@ -192,7 +201,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     filter?.key === "activity" ? (
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Likes on your cracks</h2>
+          <h2 className="section-title">Likes on your cracks</h2>
           <Link href="/" className="text-sm underline">
             Back to all cracks
           </Link>
@@ -235,7 +244,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     <>
       <div className="flex items-center justify-between gap-2">
         <h2
-          className={`flex items-center gap-2 text-sm font-semibold ${latestLike ? "text-(--tint)" : ""}`}
+          className={`section-title flex items-center gap-2 ${latestLike ? "text-(--tint)" : ""}`}
         >
           Recent likes
           {hasNew && (
@@ -279,14 +288,21 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       {/* On wide screens the sidebar fills the window height and the humor
           map takes whatever room the rest leaves. */}
       <aside className="flex flex-col gap-6 lg:sticky lg:top-8 lg:h-[calc(100dvh-4rem)] lg:self-start">
-        <h1 className="text-3xl leading-tight font-light tracking-tight text-title">
+        <h1 className="page-title text-3xl">
           cracking jokes in the city of new york
         </h1>
         {!user ? (
-          <p className="text-sm">
-            Log in to like cracks, see who likes yours, and find your humor
-            match.
-          </p>
+          <section className="card flex flex-col gap-3 text-sm">
+            <h2 className="section-title">What is this?</h2>
+            <p>
+              A meme board for Columbia and the city around it. Scroll the
+              cracks as much as you like — no account needed.
+            </p>
+            <p>
+              Log in to like cracks, post your own (our hamsters will help with
+              the caption), and see who shares your sense of humor.
+            </p>
+          </section>
         ) : (
           <>
             {latestLike ? (
@@ -294,21 +310,21 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               <CrackTint
                 crackId={latestLike.crack_id}
                 imgUrl={latestLike.crack_img_url}
-                className="flex shrink-0 flex-col gap-3 p-4"
+                className="flex shrink-0 flex-col gap-3 p-5"
               >
                 {recentLikes}
               </CrackTint>
             ) : (
-              <section className="flex shrink-0 flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
+              <section className="card flex shrink-0 flex-col gap-3">
                 {recentLikes}
               </section>
             )}
             {/* Your favorite style's color, as an accent edge. */}
             <section
-              className="hidden min-h-0 flex-1 flex-col gap-3 rounded-lg border border-l-4 border-black/10 p-4 lg:flex dark:border-white/15"
+              className="card hidden min-h-0 flex-1 flex-col gap-3 border-l-4 lg:flex"
               style={{ borderLeftColor: mapColor }}
             >
-              <h2 className="text-sm font-semibold" style={{ color: mapColor }}>
+              <h2 className="section-title" style={{ color: mapColor }}>
                 <Link href="/humor" className="hover:underline">
                   Who laughs at what you laugh at →
                 </Link>
@@ -377,8 +393,10 @@ function LikeRow({
         )}
         <div className="min-w-0 flex-1">
           <p className={compact ? "text-xs" : "text-sm"}>
-            <span className="font-semibold">{name}</span> liked your crack ·{" "}
-            {timeAgo(like.liked_at)}
+            <span className="font-semibold">{name}</span>{" "}
+            {compact
+              ? `liked this · ${shortTimeAgo(like.liked_at)}`
+              : `liked your crack · ${timeAgo(like.liked_at)}`}
           </p>
           {like.crack_text && (
             <p className="truncate text-xs opacity-75">{like.crack_text}</p>

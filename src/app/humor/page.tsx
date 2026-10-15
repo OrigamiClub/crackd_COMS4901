@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import AccountButton from "@/components/account-button";
+import SiteHeader from "@/components/site-header";
 import {
   computeHumorProfile,
   refreshHumorSummary,
@@ -80,29 +80,27 @@ export default async function HumorPage() {
     ? nodes.find((n) => n.id === (closest.a === user.id ? closest.b : closest.a))
     : null;
 
-  // The profile card is tinted with your favorite style's color (the same
+  // Thumbnails of what you've liked, so the card shows what it's based on.
+  const likedCracks = (myLikes.data ?? [])
+    .map((l) => ({ id: l.crack_id, ...crackMap[l.crack_id] }))
+    .filter((c) => c.img_url)
+    .slice(0, 8);
+
+  // The profile card is accented with your favorite style's color (the same
   // as your ring in the graph), or plum until that's known.
   const myStyle = nodes.find((n) => n.id === user.id)?.topStyle;
   const cardColor = styleInfo(myStyle)?.color ?? "var(--plum)";
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
-      <div className="flex w-full items-center justify-between gap-4">
-        <Link
-          href="/"
-          className="btn-pop flex h-10 items-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
-        >
-          ← Back to home
-        </Link>
-        <AccountButton />
-      </div>
-      <h1 className="text-[48px] leading-tight font-light tracking-tight text-title">
+      <SiteHeader />
+      <h1 className="page-title">
         your humor network
       </h1>
 
       <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
-        <section className="flex flex-col gap-4 rounded-lg border border-black/10 p-5 dark:border-white/15">
-          <h2 className="text-lg font-semibold">Who laughs at what you laugh at</h2>
+        <section className="card flex flex-col gap-4">
+          <h2 className="section-title">Who laughs at what you laugh at</h2>
           <NetworkGraph
             nodes={nodes}
             edges={edges}
@@ -120,13 +118,10 @@ export default async function HumorPage() {
         </section>
 
         <section
-          className="flex flex-col gap-4 rounded-lg border p-5"
-          style={{
-            backgroundColor: `color-mix(in srgb, ${cardColor} 22%, var(--background))`,
-            borderColor: `color-mix(in srgb, ${cardColor} 60%, transparent)`,
-          }}
+          className="card flex flex-col gap-4 border-l-4"
+          style={{ borderLeftColor: cardColor }}
         >
-          <h2 className="text-lg font-semibold" style={{ color: cardColor }}>
+          <h2 className="section-title" style={{ color: cardColor }}>
             Your sense of humor
             {styleInfo(myStyle) && (
               <span className="ml-2 text-sm font-normal opacity-80">
@@ -140,10 +135,29 @@ export default async function HumorPage() {
           )}
 
           {!profile.enough ? (
-            <p className="text-sm">
-              Like a few more cracks (or pick some hamster captions) and we&apos;ll
-              tell you what makes you laugh.
-            </p>
+            <div className="flex flex-col gap-3 text-sm">
+              <p>
+                Like a few more cracks (or pick some hamster captions) and
+                we&apos;ll tell you what makes you laugh.
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="h-2 flex-1 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+                  <span
+                    className="block h-full rounded-full"
+                    style={{
+                      width: `${(Math.min(profile.likedTagged, 3) / 3) * 100}%`,
+                      backgroundColor: cardColor,
+                    }}
+                  />
+                </span>
+                <span className="text-xs opacity-75">
+                  {Math.min(profile.likedTagged, 3)} of 3 likes counted
+                </span>
+              </div>
+              <Link href="/" className="btn-secondary self-start">
+                Browse cracks →
+              </Link>
+            </div>
           ) : (
             <>
               <TagList
@@ -183,6 +197,25 @@ export default async function HumorPage() {
                 </div>
               )}
             </>
+          )}
+
+          {likedCracks.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h3 className="section-title">Cracks you&apos;ve liked</h3>
+              <div className="flex flex-wrap gap-2">
+                {likedCracks.map((crack) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={crack.id}
+                    src={crack.img_url!}
+                    alt={crack.text ?? ""}
+                    title={crack.text ?? ""}
+                    className="size-16 rounded object-cover"
+                    loading="lazy"
+                  />
+                ))}
+              </div>
+            </div>
           )}
 
           <p className="mt-auto text-xs opacity-60">

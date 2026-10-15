@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import AccountButton from "@/components/account-button";
+import SiteHeader from "@/components/site-header";
 import { updateProfile } from "./actions";
 import AvatarPicker from "./avatar-picker";
 
@@ -25,24 +25,8 @@ export default async function ProfilePage() {
 
   return (
     <main className="flex flex-1 flex-col items-center gap-6 p-8">
-      <div className="flex w-full items-center justify-between gap-4">
-        <Link
-          href="/"
-          className="btn-pop flex h-10 items-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
-        >
-          ← Back to home
-        </Link>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/humor"
-            className="btn-pop flex h-10 items-center rounded-full border border-black/10 bg-plum px-4 text-sm font-medium text-white"
-          >
-            Your sense of humor →
-          </Link>
-          <AccountButton />
-        </div>
-      </div>
-      <h1 className="max-w-2xl text-center text-[40px] leading-tight font-light tracking-tight text-title">
+      <SiteHeader showNewCrack={false} />
+      <h1 className="page-title max-w-2xl text-center">
         we promise not to sell your information to Facebook
       </h1>
       {isIncomplete && (
@@ -65,7 +49,7 @@ export default async function ProfilePage() {
               defaultValue={profile?.first_name ?? ""}
               required
               autoComplete="given-name"
-              className="rounded-md border border-black/10 bg-white p-2 text-base"
+              className="rounded-md border border-black/10 bg-white p-2 text-base dark:border-white/15 dark:bg-white/10"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -76,25 +60,24 @@ export default async function ProfilePage() {
               defaultValue={profile?.last_name ?? ""}
               required
               autoComplete="family-name"
-              className="rounded-md border border-black/10 bg-white p-2 text-base"
+              className="rounded-md border border-black/10 bg-white p-2 text-base dark:border-white/15 dark:bg-white/10"
             />
           </label>
         </div>
-        <button
-          type="submit"
-          className="btn-pop flex h-10 items-center justify-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
-        >
+        <button type="submit" className="btn-primary">
           Save
         </button>
       </form>
-      <form action="/api/auth/logout" method="POST">
-        <button
-          type="submit"
-          className="btn-pop flex h-10 items-center rounded-full border border-foreground px-4 text-sm font-medium text-foreground"
-        >
-          Log out
-        </button>
-      </form>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <Link href="/humor" className="btn-secondary">
+          Your sense of humor →
+        </Link>
+        <form action="/api/auth/logout" method="POST">
+          <button type="submit" className="btn-outline">
+            Log out
+          </button>
+        </form>
+      </div>
     </main>
   );
 }

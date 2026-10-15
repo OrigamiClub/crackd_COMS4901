@@ -39,7 +39,7 @@ export default function CrackTile({
           backgroundColor: color,
         } as React.CSSProperties
       }
-      className="cascade-in flex rotate-(--tilt) flex-col overflow-hidden rounded-lg border border-black/10 text-background transition-[background-color,rotate,translate,box-shadow] duration-500 hover:rotate-0 hover:shadow-xl motion-safe:hover:-translate-y-1 dark:border-white/15"
+      className="cascade-in flex rotate-(--tilt) flex-col overflow-hidden rounded-lg border border-black/10 text-white transition-[background-color,rotate,translate,box-shadow] duration-500 hover:rotate-0 hover:shadow-xl motion-safe:hover:-translate-y-1 dark:border-white/15"
     >
       {imgUrl && (
         // eslint-disable-next-line @next/next/no-img-element
