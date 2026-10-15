@@ -2,7 +2,10 @@
 // and the file's claimed type can't be trusted, so we look at the first
 // bytes to decide what the file really is.
 
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+// 4MB, so a photo plus the rest of the form stays under Vercel's 4.5MB
+// request limit.
+export const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+export const IMAGE_TOO_BIG = "Images must be 4MB or smaller.";
 
 const SIGNATURES: { type: string; extension: string; matches: (b: Uint8Array) => boolean }[] = [
   {
@@ -34,12 +37,12 @@ const SIGNATURES: { type: string; extension: string; matches: (b: Uint8Array) =>
 export type CheckedImage = { type: string; extension: string };
 
 // Returns the real type of a JPEG/PNG/GIF/WebP image, or an error message
-// for anything else (including SVG/HTML) or anything over 5MB.
+// for anything else (including SVG/HTML) or anything over 4MB.
 export async function checkImage(
   file: Blob
 ): Promise<CheckedImage | { error: string }> {
   if (file.size > MAX_IMAGE_BYTES) {
-    return { error: "Images must be 5MB or smaller." };
+    return { error: IMAGE_TOO_BIG };
   }
 
   const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
