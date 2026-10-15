@@ -70,7 +70,7 @@ async function tagCrack(
     }
   }
 
-  const result = await callGemini(parts, TAG_SCHEMA);
+  const result = await callGemini(parts, TAG_SCHEMA, { background: true });
   if ("error" in result) {
     console.error(`Couldn't tag crack ${crack.id}:`, result.error);
     return;
@@ -271,7 +271,8 @@ export async function refreshHumorSummary(userId: string, profile: HumorProfile)
             facts.join("\n"),
         },
       ],
-      SUMMARY_SCHEMA
+      SUMMARY_SCHEMA,
+      { background: true }
     );
     if ("error" in result) {
       console.error("Couldn't write humor summary:", result.error);
