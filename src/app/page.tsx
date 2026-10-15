@@ -9,35 +9,33 @@ import NetworkGraph, {
 } from "./humor/network-graph";
 import { styleInfo } from "@/lib/humor-vocab";
 
-const pill =
-  "btn-pop flex h-10 items-center rounded-full border px-4 text-sm font-medium";
-const pillAccent = `${pill} border-black/10 bg-title text-white`;
+const newCrackButton =
+  "btn-pop flex h-10 items-center rounded-full border border-black/10 bg-title px-4 text-sm font-medium text-white";
 
-// Each filter has its own palette color: filled when off, outlined when
-// active. Class names are written out in full so Tailwind generates them.
+// Feed views. They share one neutral tab style so "+ New Crack" stays the
+// only highlighted action; "activity" is reached from the sidebar instead.
 const FILTERS = [
   {
     key: "mine",
     label: "My Cracks",
     empty: "You haven't posted any cracks yet.",
-    off: `${pill} border-black/10 bg-sage text-white`,
-    on: `${pill} border-sage bg-background text-sage`,
   },
   {
     key: "liked",
     label: "Cracks I Like",
     empty: "You haven't liked any cracks yet.",
-    off: `${pill} border-black/10 bg-mustard text-white`,
-    on: `${pill} border-mustard bg-background text-mustard`,
   },
   {
     key: "activity",
     label: "Likes on My Cracks",
     empty: "No one has liked your cracks yet — keep cracking.",
-    off: `${pill} border-black/10 bg-plum text-white`,
-    on: `${pill} border-plum bg-background text-plum`,
   },
 ] as const;
+
+const tab =
+  "flex h-8 items-center rounded-full px-4 text-sm font-medium transition-colors";
+const tabOn = `${tab} bg-foreground text-white`;
+const tabOff = `${tab} text-foreground hover:bg-foreground/10`;
 
 // How many recent likes the sidebar shows.
 const SIDEBAR_LIKES = 5;
@@ -146,33 +144,48 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     nodes?: NetworkNode[];
     edges?: NetworkEdge[];
   };
-  // The map panel is tinted with the user's favorite style's color, like
+  // The map panel is accented with the user's favorite style's color, like
   // the profile card on /humor, or plum until that's known.
   const mapColor =
     styleInfo(nodes.find((n) => n.id === user?.id)?.topStyle)?.color ??
     "var(--plum)";
 
-  // Filters and the new-crack button, above the feed.
-  const toolbar = user && (
-    <div className="flex flex-wrap items-center gap-3">
-      {FILTERS.filter((f) => f.key !== "activity").map((f) => {
-        const active = filter?.key === f.key;
-        return (
-          <Link
-            key={f.key}
-            // Clicking the active filter goes back to all cracks.
-            href={active ? "/" : `/?filter=${f.key}`}
-            aria-current={active ? "page" : undefined}
-            className={active ? f.on : f.off}
-          >
-            {f.label}
+  // One navigation bar above the feed: view tabs on the left, the primary
+  // action and the account button on the right.
+  const tabs = [
+    { key: null, label: "All Cracks" },
+    ...FILTERS.filter((f) => f.key !== "activity"),
+  ];
+  const toolbar = (
+    <nav className="flex flex-wrap items-center justify-between gap-3">
+      {user ? (
+        <div className="flex flex-wrap items-center gap-1 rounded-full border border-black/10 p-1 dark:border-white/15">
+          {tabs.map((t) => {
+            const active = (filter?.key ?? null) === t.key;
+            return (
+              <Link
+                key={t.key ?? "all"}
+                href={t.key ? `/?filter=${t.key}` : "/"}
+                aria-current={active ? "page" : undefined}
+                className={active ? tabOn : tabOff}
+              >
+                {t.label}
+              </Link>
+            );
+          })}
+        </div>
+      ) : (
+        <span />
+      )}
+      <div className="flex items-center gap-3">
+        {user && (
+          <Link href="/cracks/new" className={newCrackButton}>
+            + New Crack
           </Link>
-        );
-      })}
-      <Link href="/cracks/new" className={pillAccent}>
-        + New Crack
-      </Link>
-    </div>
+        )}
+        <AccountButton />
+      </div>
+    </nav>
   );
 
   const feed =
@@ -222,7 +235,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     <>
       <div className="flex items-center justify-between gap-2">
         <h2
-          className={`flex items-center gap-2 font-semibold ${latestLike ? "text-(--tint)" : ""}`}
+          className={`flex items-center gap-2 text-sm font-semibold ${latestLike ? "text-(--tint)" : ""}`}
         >
           Recent likes
           {hasNew && (
@@ -258,20 +271,17 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     </>
   );
 
-  // A left sidebar holds the title, the account button and, for logged-in
-  // users, recent likes and the humor map; the feed fills the rest. On
+  // A left sidebar holds the title and, for logged-in users, recent likes
+  // and the humor map; the nav bar and feed fill the rest. On
   // narrow screens the sidebar stacks above the feed, without the map.
   return (
-    <main className="grid flex-1 grid-cols-1 content-start gap-6 p-8 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-10">
+    <main className="grid flex-1 grid-cols-1 content-start gap-6 p-8 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-10">
       {/* On wide screens the sidebar fills the window height and the humor
           map takes whatever room the rest leaves. */}
       <aside className="flex flex-col gap-6 lg:sticky lg:top-8 lg:h-[calc(100dvh-4rem)] lg:self-start">
-        <div className="flex flex-col items-start gap-4">
-          <h1 className="text-4xl leading-tight font-light tracking-tight text-title">
-            cracking jokes in the city of new york
-          </h1>
-          <AccountButton />
-        </div>
+        <h1 className="text-3xl leading-tight font-light tracking-tight text-title">
+          cracking jokes in the city of new york
+        </h1>
         {!user ? (
           <p className="text-sm">
             Log in to like cracks, see who likes yours, and find your humor
@@ -280,7 +290,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         ) : (
           <>
             {latestLike ? (
-              // Tinted to match the most recently liked crack's tile.
+              // Accented with the most recently liked crack's tile color.
               <CrackTint
                 crackId={latestLike.crack_id}
                 imgUrl={latestLike.crack_img_url}
@@ -293,14 +303,12 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 {recentLikes}
               </section>
             )}
+            {/* Your favorite style's color, as an accent edge. */}
             <section
-              className="hidden min-h-0 flex-1 flex-col gap-3 rounded-lg border p-4 lg:flex"
-              style={{
-                backgroundColor: `color-mix(in srgb, ${mapColor} 22%, var(--background))`,
-                borderColor: `color-mix(in srgb, ${mapColor} 60%, transparent)`,
-              }}
+              className="hidden min-h-0 flex-1 flex-col gap-3 rounded-lg border border-l-4 border-black/10 p-4 lg:flex dark:border-white/15"
+              style={{ borderLeftColor: mapColor }}
             >
-              <h2 className="font-semibold" style={{ color: mapColor }}>
+              <h2 className="text-sm font-semibold" style={{ color: mapColor }}>
                 <Link href="/humor" className="hover:underline">
                   Who laughs at what you laugh at →
                 </Link>

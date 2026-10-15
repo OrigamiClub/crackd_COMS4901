@@ -2,8 +2,9 @@
 
 import { useCrackColor } from "./crack-color";
 
-// A bordered panel tinted with a crack's theme color, so it matches that
-// crack's tile in the feed. Children can use the color via `text-(--tint)`.
+// A bordered panel with a crack's theme color as an accent edge, so it
+// matches that crack's tile in the feed without competing with it.
+// Children can use the color via `text-(--tint)`.
 export default function CrackTint({
   crackId,
   imgUrl,
@@ -18,14 +19,8 @@ export default function CrackTint({
   const color = useCrackColor(crackId, imgUrl);
   return (
     <section
-      className={`rounded-lg border transition-colors duration-500 ${className}`}
-      style={
-        {
-          "--tint": color,
-          backgroundColor: `color-mix(in srgb, ${color} 22%, var(--background))`,
-          borderColor: `color-mix(in srgb, ${color} 60%, transparent)`,
-        } as React.CSSProperties
-      }
+      className={`rounded-lg border border-l-4 border-black/10 transition-colors duration-500 dark:border-white/15 ${className}`}
+      style={{ "--tint": color, borderLeftColor: color } as React.CSSProperties}
     >
       {children}
     </section>
