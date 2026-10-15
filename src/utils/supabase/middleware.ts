@@ -1,10 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Refreshes the Supabase auth session cookie on every request. Currently a
-// no-op (no sessions exist yet), but is required infrastructure for once
-// login is added — this is also where unauthenticated users would get
-// redirected away from protected routes.
+// Refreshes the Supabase auth session cookie on every request so logins
+// don't expire mid-visit. Route protection lives in each page and server
+// action (they call getUser() and redirect to /login), and RLS enforces it
+// again in the database.
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -29,8 +29,6 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // TODO: once auth exists, branch on the returned user to redirect
-  // unauthenticated requests away from protected routes.
   await supabase.auth.getUser();
 
   return supabaseResponse;

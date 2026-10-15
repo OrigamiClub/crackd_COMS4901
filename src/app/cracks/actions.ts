@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { checkImage, fetchOwnCrackImage } from "@/lib/images";
 import { callGemini } from "@/lib/gemini";
 import { tagCracks, type CaptionOption } from "@/lib/humor";
@@ -207,10 +208,15 @@ export async function generateCaption(
     return { error: "Gemini didn't return any captions. Try again." };
   }
 
-  const { error: optionsError } = await supabase
-    .from("caption_requests")
-    .update({ options: captions })
-    .eq("id", logged.id);
+  // Saved with the service-role key: users can't write options themselves,
+  // so they can't make up what they were offered.
+  const admin = createAdminClient();
+  const { error: optionsError } = admin
+    ? await admin
+        .from("caption_requests")
+        .update({ options: captions })
+        .eq("id", logged.id)
+    : { error: "SUPABASE_SERVICE_ROLE_KEY isn't set" };
   if (optionsError) {
     console.error("Couldn't save caption options", optionsError);
   }

@@ -5,12 +5,13 @@ import { useFormStatus } from "react-dom";
 import { generateCaption } from "./actions";
 import type { CaptionOption } from "@/lib/humor";
 import { styleInfo } from "@/lib/humor-vocab";
+import { IMAGE_TOO_BIG, MAX_IMAGE_BYTES } from "@/lib/images";
 import Step from "./step";
 
 const COPY = {
   new: {
     picture: "Choose a cracking picture",
-    pictureHint: "Any image up to 5MB.",
+    pictureHint: "Any image up to 4MB.",
     caption: "Let our patented team of hamsters generate a caption",
     submit: "Inflict your progeny upon the world",
     submitButton: "Inflict it",
@@ -57,6 +58,7 @@ export default function CrackFields({
   } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   // Free the object URL for the previous preview when it changes.
@@ -70,7 +72,16 @@ export default function CrackFields({
   const shownImage = previewUrl ?? defaultImageUrl;
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const photo = e.target.files?.[0];
+    let photo = e.target.files?.[0];
+    // Catch oversized files here; the server would only reject them
+    // after the whole upload.
+    if (photo && photo.size > MAX_IMAGE_BYTES) {
+      e.target.value = "";
+      photo = undefined;
+      setPhotoError(IMAGE_TOO_BIG);
+    } else {
+      setPhotoError(null);
+    }
     setPreviewUrl(photo ? URL.createObjectURL(photo) : null);
     // Captions written for the old picture no longer fit a new one.
     setOptions([]);
@@ -127,6 +138,7 @@ export default function CrackFields({
           onChange={handlePhotoChange}
           className="block w-full text-sm file:mr-3 file:cursor-pointer file:rounded-full file:border file:border-black/10 file:bg-foreground file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
         />
+        {photoError && <p className="text-sm text-red-700">{photoError}</p>}
         {shownImage && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
