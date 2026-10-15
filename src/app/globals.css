@@ -33,6 +33,41 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Design system: the shared type, card and button styles every page uses.
+   Text: page-title (36px light, brand orange) > section-title (14px semibold)
+   > body (14px) > small print (12px). Color roles: orange (title) is the
+   brand and the one primary action per screen; blue (foreground) is text
+   and secondary controls; the other palette colors belong to content. */
+@utility page-title {
+  @apply text-4xl leading-tight font-light tracking-tight text-title;
+}
+
+@utility section-title {
+  @apply text-sm font-semibold;
+}
+
+@utility card {
+  @apply rounded-lg border border-black/10 p-5 dark:border-white/15;
+}
+
+@utility btn {
+  @apply btn-pop flex h-10 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium;
+}
+
+/* The one main action on a screen (+ New Crack, Post, Save). */
+@utility btn-primary {
+  @apply btn border-black/10 bg-title text-white;
+}
+
+/* Everything else that's a button: account, back, secondary actions. */
+@utility btn-secondary {
+  @apply btn border-black/10 bg-foreground text-white;
+}
+
+@utility btn-outline {
+  @apply btn border-foreground text-foreground;
+}
+
 /* Buttons and pills lift on hover and squish when pressed. */
 @utility btn-pop {
   transition-property: translate, scale, box-shadow;

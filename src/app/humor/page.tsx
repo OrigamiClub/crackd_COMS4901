@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import AccountButton from "@/components/account-button";
+import SiteHeader from "@/components/site-header";
 import {
   computeHumorProfile,
   refreshHumorSummary,
@@ -80,29 +79,21 @@ export default async function HumorPage() {
     ? nodes.find((n) => n.id === (closest.a === user.id ? closest.b : closest.a))
     : null;
 
-  // The profile card is tinted with your favorite style's color (the same
+  // The profile card is accented with your favorite style's color (the same
   // as your ring in the graph), or plum until that's known.
   const myStyle = nodes.find((n) => n.id === user.id)?.topStyle;
   const cardColor = styleInfo(myStyle)?.color ?? "var(--plum)";
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-8">
-      <div className="flex w-full items-center justify-between gap-4">
-        <Link
-          href="/"
-          className="btn-pop flex h-10 items-center rounded-full border border-black/10 bg-foreground px-4 text-sm font-medium text-white"
-        >
-          ← Back to home
-        </Link>
-        <AccountButton />
-      </div>
-      <h1 className="text-[48px] leading-tight font-light tracking-tight text-title">
+      <SiteHeader />
+      <h1 className="page-title">
         your humor network
       </h1>
 
       <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
-        <section className="flex flex-col gap-4 rounded-lg border border-black/10 p-5 dark:border-white/15">
-          <h2 className="text-lg font-semibold">Who laughs at what you laugh at</h2>
+        <section className="card flex flex-col gap-4">
+          <h2 className="section-title">Who laughs at what you laugh at</h2>
           <NetworkGraph
             nodes={nodes}
             edges={edges}
@@ -120,13 +111,10 @@ export default async function HumorPage() {
         </section>
 
         <section
-          className="flex flex-col gap-4 rounded-lg border p-5"
-          style={{
-            backgroundColor: `color-mix(in srgb, ${cardColor} 22%, var(--background))`,
-            borderColor: `color-mix(in srgb, ${cardColor} 60%, transparent)`,
-          }}
+          className="card flex flex-col gap-4 border-l-4"
+          style={{ borderLeftColor: cardColor }}
         >
-          <h2 className="text-lg font-semibold" style={{ color: cardColor }}>
+          <h2 className="section-title" style={{ color: cardColor }}>
             Your sense of humor
             {styleInfo(myStyle) && (
               <span className="ml-2 text-sm font-normal opacity-80">

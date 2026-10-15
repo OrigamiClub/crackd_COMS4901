@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 
 export default function LoginPage() {
@@ -13,14 +14,14 @@ export default function LoginPage() {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-[150px] font-light tracking-tight text-title">Log in</h1>
-      <h1 className="text-[20px] font-light tracking-tight text-title">Don&apos;t be a stranger :)</h1>
-      <button
-        onClick={handleGoogleLogin}
-        className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-white"
-      >
+      <h1 className="text-[150px] leading-none font-light tracking-tight text-title">Log in</h1>
+      <p className="text-xl font-light tracking-tight text-title">Don&apos;t be a stranger :)</p>
+      <button onClick={handleGoogleLogin} className="btn-primary">
         Continue with Google
       </button>
+      <Link href="/" className="text-sm underline">
+        or just browse the cracks first
+      </Link>
     </main>
   );
 }

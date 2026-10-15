@@ -159,7 +159,7 @@ export default function CrackFields({
           type="button"
           onClick={handleGenerate}
           disabled={!hasPicture || isPending}
-          className="btn-pop self-start rounded-full border border-black/10 bg-sage px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="btn-secondary self-start disabled:opacity-50"
         >
           {isPending ? (
             <HamsterStatus />
@@ -292,7 +292,7 @@ function SubmitButton({
     <button
       type="submit"
       disabled={disabled || pending}
-      className="btn-pop self-start rounded-full border border-black/10 bg-title px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+      className="btn-primary self-start disabled:opacity-50"
     >
       {pending ? pendingLabel : label}
     </button>
