@@ -2,10 +2,16 @@
 
 :root {
   --background: #fffffe;
-  --foreground: #618a9e;
+  /* Blue for text and secondary controls; dark enough for 4.5:1 contrast
+     both as text on the background and behind white button text. */
+  --foreground: #4a6f82;
+  --text: var(--foreground);
+  /* Brand orange for big titles; the deeper --primary keeps white text on
+     primary buttons readable. */
   --title: #d86e4e;
-  --sage: #6f9468;
-  --mustard: #b5822a;
+  --primary: #b9533a;
+  --sage: #5d7f55;
+  --mustard: #8f6721;
   --plum: #8a5a7a;
 }
 
@@ -13,6 +19,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-title: var(--title);
+  --color-primary: var(--primary);
   --color-sage: var(--sage);
   --color-mustard: var(--mustard);
   --color-plum: var(--plum);
@@ -22,14 +29,16 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #618a9e;
-    --foreground: #618a9e;
+    --background: #162027;
+    --foreground: #5b8399;
+    --text: #cfdde5;
+    --title: #e8896a;
   }
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
+  color: var(--text);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
@@ -56,7 +65,7 @@ body {
 
 /* The one main action on a screen (+ New Crack, Post, Save). */
 @utility btn-primary {
-  @apply btn border-black/10 bg-title text-white;
+  @apply btn border-black/10 bg-primary text-white;
 }
 
 /* Everything else that's a button: account, back, secondary actions. */

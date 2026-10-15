@@ -223,7 +223,7 @@ export default function NetworkGraph({
         <svg
           ref={svgRef}
           viewBox={`0 0 ${size.width} ${size.height}`}
-          className={`touch-none rounded-lg bg-white/60 ${
+          className={`touch-none rounded-lg bg-white/60 dark:bg-white/5 ${
             compact
               ? "absolute inset-0 h-full w-full border border-black/10 dark:border-white/15"
               : "w-full"

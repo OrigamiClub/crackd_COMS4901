@@ -153,7 +153,7 @@ export default function CrackFields({
           maxLength={300}
           disabled={!hasPicture}
           aria-label="Direction for the caption"
-          className="rounded-md border border-black/10 bg-white p-2"
+          className="rounded-md border border-black/10 bg-white p-2 dark:border-white/15 dark:bg-white/10"
         />
         <button
           type="button"
@@ -190,7 +190,7 @@ export default function CrackFields({
                   className={`cascade-in flex items-start justify-between gap-3 rounded-md border p-2 text-left text-sm transition-colors ${
                     picked
                       ? "border-sage bg-sage text-white"
-                      : "border-black/10 bg-white hover:border-sage"
+                      : "border-black/10 bg-white hover:border-sage dark:border-white/15 dark:bg-white/10"
                   }`}
                 >
                   <span>{option.caption}</span>

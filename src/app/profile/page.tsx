@@ -49,7 +49,7 @@ export default async function ProfilePage() {
               defaultValue={profile?.first_name ?? ""}
               required
               autoComplete="given-name"
-              className="rounded-md border border-black/10 bg-white p-2 text-base"
+              className="rounded-md border border-black/10 bg-white p-2 text-base dark:border-white/15 dark:bg-white/10"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -60,7 +60,7 @@ export default async function ProfilePage() {
               defaultValue={profile?.last_name ?? ""}
               required
               autoComplete="family-name"
-              className="rounded-md border border-black/10 bg-white p-2 text-base"
+              className="rounded-md border border-black/10 bg-white p-2 text-base dark:border-white/15 dark:bg-white/10"
             />
           </label>
         </div>

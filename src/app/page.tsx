@@ -58,6 +58,19 @@ function timeAgo(iso: string) {
   return "just now";
 }
 
+const SHORT_UNITS = { year: "y", month: "mo", week: "w", day: "d", hour: "h", minute: "m" };
+
+// "3h", "2d", "now": for the narrow sidebar.
+function shortTimeAgo(iso: string) {
+  const seconds = (Date.now() - new Date(iso).getTime()) / 1000;
+  for (const { unit, seconds: size } of TIME_UNITS) {
+    if (seconds >= size) {
+      return `${Math.floor(seconds / size)}${SHORT_UNITS[unit]}`;
+    }
+  }
+  return "now";
+}
+
 type LikeNotification = {
   crack_id: number;
   crack_text: string | null;
@@ -380,8 +393,10 @@ function LikeRow({
         )}
         <div className="min-w-0 flex-1">
           <p className={compact ? "text-xs" : "text-sm"}>
-            <span className="font-semibold">{name}</span> liked your crack ·{" "}
-            {timeAgo(like.liked_at)}
+            <span className="font-semibold">{name}</span>{" "}
+            {compact
+              ? `liked this · ${shortTimeAgo(like.liked_at)}`
+              : `liked your crack · ${timeAgo(like.liked_at)}`}
           </p>
           {like.crack_text && (
             <p className="truncate text-xs opacity-75">{like.crack_text}</p>

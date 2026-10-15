@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { createClient } from "@/utils/supabase/server";
@@ -79,6 +80,12 @@ export default async function HumorPage() {
     ? nodes.find((n) => n.id === (closest.a === user.id ? closest.b : closest.a))
     : null;
 
+  // Thumbnails of what you've liked, so the card shows what it's based on.
+  const likedCracks = (myLikes.data ?? [])
+    .map((l) => ({ id: l.crack_id, ...crackMap[l.crack_id] }))
+    .filter((c) => c.img_url)
+    .slice(0, 8);
+
   // The profile card is accented with your favorite style's color (the same
   // as your ring in the graph), or plum until that's known.
   const myStyle = nodes.find((n) => n.id === user.id)?.topStyle;
@@ -128,10 +135,29 @@ export default async function HumorPage() {
           )}
 
           {!profile.enough ? (
-            <p className="text-sm">
-              Like a few more cracks (or pick some hamster captions) and we&apos;ll
-              tell you what makes you laugh.
-            </p>
+            <div className="flex flex-col gap-3 text-sm">
+              <p>
+                Like a few more cracks (or pick some hamster captions) and
+                we&apos;ll tell you what makes you laugh.
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="h-2 flex-1 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+                  <span
+                    className="block h-full rounded-full"
+                    style={{
+                      width: `${(Math.min(profile.likedTagged, 3) / 3) * 100}%`,
+                      backgroundColor: cardColor,
+                    }}
+                  />
+                </span>
+                <span className="text-xs opacity-75">
+                  {Math.min(profile.likedTagged, 3)} of 3 likes counted
+                </span>
+              </div>
+              <Link href="/" className="btn-secondary self-start">
+                Browse cracks →
+              </Link>
+            </div>
           ) : (
             <>
               <TagList
@@ -171,6 +197,25 @@ export default async function HumorPage() {
                 </div>
               )}
             </>
+          )}
+
+          {likedCracks.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h3 className="section-title">Cracks you&apos;ve liked</h3>
+              <div className="flex flex-wrap gap-2">
+                {likedCracks.map((crack) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={crack.id}
+                    src={crack.img_url!}
+                    alt={crack.text ?? ""}
+                    title={crack.text ?? ""}
+                    className="size-16 rounded object-cover"
+                    loading="lazy"
+                  />
+                ))}
+              </div>
+            </div>
           )}
 
           <p className="mt-auto text-xs opacity-60">
