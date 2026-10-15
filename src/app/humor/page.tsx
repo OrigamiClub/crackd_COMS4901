@@ -101,7 +101,7 @@ export default async function HumorPage() {
       </h1>
 
       <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
-        <section className="flex flex-col gap-4 self-start rounded-lg border border-black/10 p-5 dark:border-white/15">
+        <section className="flex flex-col gap-4 rounded-lg border border-black/10 p-5 dark:border-white/15">
           <h2 className="text-lg font-semibold">Who laughs at what you laugh at</h2>
           <NetworkGraph
             nodes={nodes}
@@ -120,7 +120,7 @@ export default async function HumorPage() {
         </section>
 
         <section
-          className="flex flex-col gap-4 self-start rounded-lg border p-5"
+          className="flex flex-col gap-4 rounded-lg border p-5"
           style={{
             backgroundColor: `color-mix(in srgb, ${cardColor} 22%, var(--background))`,
             borderColor: `color-mix(in srgb, ${cardColor} 60%, transparent)`,
@@ -185,7 +185,7 @@ export default async function HumorPage() {
             </>
           )}
 
-          <p className="text-xs opacity-60">
+          <p className="mt-auto text-xs opacity-60">
             Based on {profile.likedTagged} liked{" "}
             {profile.likedTagged === 1 ? "crack" : "cracks"} and {profile.picks}{" "}
             caption {profile.picks === 1 ? "pick" : "picks"}. &ldquo;Not your
