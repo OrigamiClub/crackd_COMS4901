@@ -281,13 +281,15 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   );
 
   // A left sidebar holds the title and, for logged-in users, recent likes
-  // and the humor map; the nav bar and feed fill the rest. On
-  // narrow screens the sidebar stacks above the feed, without the map.
+  // and the humor map; the nav bar and feed fill the rest. The sidebar is
+  // a pale column split off by a thin line, like the admin app's, with its
+  // panels sitting directly on the fill. On narrow screens it stacks above
+  // the feed, without the map.
   return (
-    <main className="grid flex-1 grid-cols-1 content-start gap-6 p-8 lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-10">
+    <main className="flex flex-1 flex-col lg:flex-row">
       {/* On wide screens the sidebar fills the window height and the humor
           map takes whatever room the rest leaves. */}
-      <aside className="flex flex-col gap-6 lg:sticky lg:top-8 lg:h-[calc(100dvh-4rem)] lg:self-start">
+      <aside className="flex flex-col gap-6 border-b border-black/10 bg-foreground/5 p-8 lg:sticky lg:top-0 lg:h-dvh lg:w-96 lg:shrink-0 lg:border-r lg:border-b-0 dark:border-white/15">
         <h1 className="page-title text-3xl">
           cracking jokes in the city of new york
         </h1>
@@ -346,7 +348,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           </>
         )}
       </aside>
-      <div className="flex flex-col gap-6">
+      <div className="flex min-w-0 flex-1 flex-col gap-6 p-8">
         {toolbar}
         {feed}
       </div>
