@@ -7,6 +7,8 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { checkImage, fetchOwnCrackImage } from "@/lib/images";
 import { callGemini } from "@/lib/gemini";
+import { captionPrompt, loadCaptionSettings } from "@/lib/caption-settings";
+import { finishGeneration, startGeneration } from "@/lib/telemetry";
 import { tagCracks, type CaptionOption } from "@/lib/humor";
 import { STYLES, STYLE_KEYS } from "@/lib/humor-vocab";
 
@@ -133,6 +135,7 @@ export async function generateCaption(
   }
 
   let image: { data: string; type: string };
+  let crackId: number | null = null;
   const photo = getPhoto(formData);
 
   if (photo) {
@@ -164,6 +167,7 @@ export async function generateCaption(
       return fetched;
     }
     image = fetched;
+    crackId = Number(id);
   }
 
   const direction = formData.get("direction")?.toString().trim().slice(0, 300);
@@ -178,18 +182,33 @@ export async function generateCaption(
     return { error: "Caption generation is unavailable right now." };
   }
 
+  // The service-role key reads the admin-tuned prompt settings and model
+  // list, logs the run, and saves the options below.
+  const admin = createAdminClient();
+  const base = captionPrompt(CAPTION_PROMPT, await loadCaptionSettings(admin));
   const prompt = direction
-    ? `${CAPTION_PROMPT}\n\nThe poster's direction for the joke: ${direction}`
-    : CAPTION_PROMPT;
+    ? `${base}\n\nThe poster's direction for the joke: ${direction}`
+    : base;
 
+  const generation = await startGeneration(admin, {
+    chain: "caption",
+    source: "meme-board",
+    userId: user.id,
+    crackId,
+    captionRequestId: logged.id,
+    prompt,
+    hasImage: true,
+  });
   const result = await callGemini(
     [
       { inline_data: { mime_type: image.type, data: image.data } },
       { text: prompt },
     ],
-    CAPTION_SCHEMA
+    CAPTION_SCHEMA,
+    { db: admin, generation }
   );
   if ("error" in result) {
+    await finishGeneration(generation, result.error);
     return result;
   }
 
@@ -205,12 +224,14 @@ export async function generateCaption(
     .slice(0, 3);
 
   if (captions.length === 0) {
-    return { error: "Gemini didn't return any captions. Try again." };
+    const error = "Gemini didn't return any captions. Try again.";
+    await finishGeneration(generation, error);
+    return { error };
   }
+  await finishGeneration(generation);
 
   // Saved with the service-role key: users can't write options themselves,
   // so they can't make up what they were offered.
-  const admin = createAdminClient();
   const { error: optionsError } = admin
     ? await admin
         .from("caption_requests")
