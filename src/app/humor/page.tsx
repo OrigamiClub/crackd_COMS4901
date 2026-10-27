@@ -92,13 +92,13 @@ export default async function HumorPage() {
   const cardColor = styleInfo(myStyle)?.color ?? "var(--plum)";
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-8">
+    <main className="flex flex-1 flex-col gap-6 p-6 lg:p-8">
       <SiteHeader />
       <h1 className="page-title">
         your humor network
       </h1>
 
-      <div className="grid gap-8 lg:grid-cols-[3fr_2fr]">
+      <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
         <section className="card flex flex-col gap-4">
           <h2 className="section-title">Who laughs at what you laugh at</h2>
           <NetworkGraph
@@ -131,7 +131,7 @@ export default async function HumorPage() {
           </h2>
 
           {humorProfile.data?.summary && (
-            <p className="text-base italic">{humorProfile.data.summary}</p>
+            <p className="heading font-normal italic">{humorProfile.data.summary}</p>
           )}
 
           {!profile.enough ? (

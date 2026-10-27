@@ -13,6 +13,8 @@
   --sage: #5d7f55;
   --mustard: #8f6721;
   --plum: #8a5a7a;
+  /* Cards and panels sit on this, a step up from the page. */
+  --surface: #ffffff;
 }
 
 @theme inline {
@@ -23,6 +25,7 @@
   --color-sage: var(--sage);
   --color-mustard: var(--mustard);
   --color-plum: var(--plum);
+  --color-surface: var(--surface);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -33,6 +36,7 @@
     --foreground: #5b8399;
     --text: #cfdde5;
     --title: #e8896a;
+    --surface: #1d2a33;
   }
 }
 
@@ -42,21 +46,45 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Design system: the shared type, card and button styles every page uses.
-   Text: page-title (36px light, brand orange) > section-title (14px semibold)
-   > body (14px) > small print (12px). Color roles: orange (title) is the
-   brand and the one primary action per screen; blue (foreground) is text
-   and secondary controls; the other palette colors belong to content. */
+/* Design system: the shared type, spacing, card and button styles every
+   page uses.
+   Type: wordmark (the brand only) > page-title (30px semibold, brand
+   orange) > heading (18px semibold) > section-title (14px semibold) >
+   body (14px) > small print (12px, 75% opacity). Headings balance their
+   lines so titles don't break awkwardly.
+   Spacing: pages pad p-6 (lg:p-8), page sections are gap-6 apart, cards
+   pad p-4, and the feed grid is gap-6.
+   Color roles: orange (title) is the brand and the one primary action per
+   screen; blue (foreground) is text and secondary controls; the other
+   palette colors belong to content. */
+@utility wordmark {
+  @apply text-4xl leading-none font-bold tracking-tighter lowercase text-title;
+}
+
 @utility page-title {
-  @apply text-4xl leading-tight font-light tracking-tight text-title;
+  @apply text-3xl leading-tight font-semibold tracking-tight text-balance text-title;
+}
+
+@utility heading {
+  @apply text-lg leading-snug font-semibold text-balance;
 }
 
 @utility section-title {
-  @apply text-sm font-semibold;
+  @apply text-sm font-semibold text-balance;
 }
 
 @utility card {
-  @apply rounded-lg border border-black/10 p-5 dark:border-white/15;
+  @apply rounded-xl border border-black/10 bg-surface p-4 dark:border-white/15;
+}
+
+/* A feed tile: the card surface with its contents running edge to edge. */
+@utility crack-card {
+  @apply overflow-hidden rounded-xl border border-black/10 bg-surface shadow-sm dark:border-white/15;
+}
+
+/* Text inputs and textareas. */
+@utility input {
+  @apply rounded-lg border border-black/15 bg-surface p-2 text-base dark:border-white/20;
 }
 
 @utility btn {

@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useCrackColor } from "./crack-color";
 import LikeButton from "./like-button";
 
-// One crack in the home feed: colored to match its picture, slightly
-// tilted (straightens on hover), and fading in after the tiles before it.
+// One crack in the home feed: a card with a strip of its picture's color
+// along the top, a square picture (or, for text-only cracks, the caption
+// on a square of that color), and a caption clamped to three lines that
+// opens in full on click. Fades in after the tiles before it.
 export default function CrackTile({
   id,
   text,
@@ -26,22 +29,19 @@ export default function CrackTile({
   canEdit: boolean;
 }) {
   const color = useCrackColor(id, imgUrl);
-
-  // A fixed tilt between -2.5° and 2.5° per crack, so it doesn't jump around.
-  const tilt = ((id * 37) % 5 - 2) * 1.25;
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <figure
-      style={
-        {
-          "--i": index,
-          "--tilt": `${tilt}deg`,
-          backgroundColor: color,
-        } as React.CSSProperties
-      }
-      className="cascade-in flex rotate-(--tilt) flex-col overflow-hidden rounded-lg border border-black/10 text-white transition-[background-color,rotate,translate,box-shadow] duration-500 hover:rotate-0 hover:shadow-xl motion-safe:hover:-translate-y-1 dark:border-white/15"
+      style={{ "--i": index } as React.CSSProperties}
+      className="crack-card cascade-in flex flex-col transition-[translate,box-shadow] duration-300 hover:shadow-lg motion-safe:hover:-translate-y-1"
     >
-      {imgUrl && (
+      <div
+        aria-hidden
+        className="h-1 shrink-0 transition-colors duration-500"
+        style={{ backgroundColor: color }}
+      />
+      {imgUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={imgUrl}
@@ -49,9 +49,27 @@ export default function CrackTile({
           className="aspect-square w-full object-cover"
           loading="lazy"
         />
+      ) : (
+        <div
+          className="flex aspect-square items-center justify-center p-6 text-white transition-colors duration-500"
+          style={{ backgroundColor: color }}
+        >
+          <p className="heading line-clamp-6 text-center text-xl">{text}</p>
+        </div>
       )}
-      {text && <figcaption className="p-3 text-sm">{text}</figcaption>}
-      <div className="mt-auto flex items-center justify-between px-3 pb-3">
+      {text && imgUrl && (
+        <figcaption className="px-4 pt-3 text-sm">
+          <button
+            type="button"
+            onClick={() => setExpanded((open) => !open)}
+            aria-expanded={expanded}
+            className={`text-left ${expanded ? "" : "line-clamp-3"}`}
+          >
+            {text}
+          </button>
+        </figcaption>
+      )}
+      <div className="mt-auto flex items-center justify-between px-4 pt-3 pb-4">
         <LikeButton
           crackId={id}
           count={likeCount}

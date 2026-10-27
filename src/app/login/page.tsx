@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { use } from "react";
 import { createClient } from "@/utils/supabase/client";
+import Wordmark from "@/components/wordmark";
 
 const ERRORS: Record<string, string> = {
   auth: "That didn't work. Try logging in again.",
@@ -21,9 +22,12 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
   }
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-[150px] leading-none font-light tracking-tight text-title">Log in</h1>
-      <p className="text-xl font-light tracking-tight text-title">Don&apos;t be a stranger :)</p>
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center lg:p-8">
+      <Wordmark tagline className="items-center" />
+      <div className="flex flex-col gap-1">
+        <h1 className="page-title">Log in</h1>
+        <p className="text-sm opacity-75">Don&apos;t be a stranger :)</p>
+      </div>
       {error && (
         <p role="alert" className="max-w-md text-center text-sm text-red-700">
           {error}

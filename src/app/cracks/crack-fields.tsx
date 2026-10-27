@@ -165,7 +165,7 @@ export default function CrackFields({
           maxLength={300}
           disabled={!hasPicture}
           aria-label="Direction for the caption"
-          className="rounded-md border border-black/10 bg-white p-2 dark:border-white/15 dark:bg-white/10"
+          className="input"
         />
         <button
           type="button"
@@ -199,7 +199,7 @@ export default function CrackFields({
                   aria-checked={picked}
                   onClick={() => handlePick(index)}
                   style={{ "--i": index * 2 } as React.CSSProperties}
-                  className={`cascade-in flex items-start justify-between gap-3 rounded-md border p-2 text-left text-sm transition-colors ${
+                  className={`cascade-in flex items-start justify-between gap-3 rounded-lg border p-2 text-left text-sm transition-colors ${
                     picked
                       ? "border-sage bg-sage text-white"
                       : "border-black/10 bg-white hover:border-sage dark:border-white/15 dark:bg-white/10"
@@ -221,7 +221,7 @@ export default function CrackFields({
           value={choice?.requestId ?? ""}
         />
         <input type="hidden" name="caption_choice" value={choice?.index ?? ""} />
-        <p className="rounded-md border border-black/10 p-2 text-sm" aria-live="polite">
+        <p className="rounded-lg border border-black/15 p-2 text-sm dark:border-white/20" aria-live="polite">
           {text || (
             <span className="opacity-60">
               {options.length > 0
