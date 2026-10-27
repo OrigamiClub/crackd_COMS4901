@@ -30,5 +30,12 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Supabase sends back an error instead of a code when a database trigger
+  // refused the new account (check_signup_allowed: the address or domain
+  // isn't on the admin's allowed list).
+  if (searchParams.get("error_description")?.includes("Database error saving new user")) {
+    return NextResponse.redirect(`${origin}/login?error=not-allowed`);
+  }
+
   return NextResponse.redirect(`${origin}/login?error=auth`);
 }

@@ -8,6 +8,7 @@ import {
   TOPIC_KEYS,
   tagLabel,
 } from "@/lib/humor-vocab";
+import { finishGeneration, startGeneration } from "@/lib/telemetry";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 type AdminClient = NonNullable<ReturnType<typeof createAdminClient>>;
@@ -70,7 +71,19 @@ async function tagCrack(
     }
   }
 
-  const result = await callGemini(parts, TAG_SCHEMA, { background: true });
+  const generation = await startGeneration(admin, {
+    chain: "tag",
+    source: "meme-board",
+    crackId: crack.id,
+    prompt: (parts.at(-1) as { text: string }).text,
+    hasImage: parts.length > 1,
+  });
+  const result = await callGemini(parts, TAG_SCHEMA, {
+    background: true,
+    db: admin,
+    generation,
+  });
+  await finishGeneration(generation, "error" in result ? result.error : undefined);
   if ("error" in result) {
     console.error(`Couldn't tag crack ${crack.id}:`, result.error);
     return;
@@ -261,19 +274,24 @@ export async function refreshHumorSummary(userId: string, profile: HumorProfile)
     ];
     if (facts.length === 0) return;
 
-    const result = await callGemini(
-      [
-        {
-          text:
-            "Write a playful 2-3 sentence description of this person's sense " +
-            "of humor for a Columbia University meme board, addressed to them " +
-            "as \"you\". Base it only on these facts; don't invent numbers.\n\n" +
-            facts.join("\n"),
-        },
-      ],
-      SUMMARY_SCHEMA,
-      { background: true }
-    );
+    const prompt =
+      "Write a playful 2-3 sentence description of this person's sense " +
+      "of humor for a Columbia University meme board, addressed to them " +
+      "as \"you\". Base it only on these facts; don't invent numbers.\n\n" +
+      facts.join("\n");
+    const generation = await startGeneration(admin, {
+      chain: "humor-summary",
+      source: "meme-board",
+      userId,
+      prompt,
+      hasImage: false,
+    });
+    const result = await callGemini([{ text: prompt }], SUMMARY_SCHEMA, {
+      background: true,
+      db: admin,
+      generation,
+    });
+    await finishGeneration(generation, "error" in result ? result.error : undefined);
     if ("error" in result) {
       console.error("Couldn't write humor summary:", result.error);
       return;
