@@ -19,7 +19,7 @@ export default function CrackTint({
   const color = useCrackColor(crackId, imgUrl);
   return (
     <section
-      className={`rounded-lg border border-l-4 border-black/10 transition-colors duration-500 dark:border-white/15 ${className}`}
+      className={`rounded-xl border border-l-4 border-black/10 bg-surface transition-colors duration-500 dark:border-white/15 ${className}`}
       style={{ "--tint": color, borderLeftColor: color } as React.CSSProperties}
     >
       {children}

@@ -18,11 +18,11 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center lg:p-8">
       <span className="text-6xl" aria-hidden>
         🐹
       </span>
-      <h1 className="page-title text-4xl">The hamsters tripped over something</h1>
+      <h1 className="page-title">The hamsters tripped over something</h1>
       <p className="max-w-md">
         That didn&apos;t work. If you were uploading a picture, make sure
         it&apos;s a JPG, PNG, GIF, or WebP under 4MB, then try again.

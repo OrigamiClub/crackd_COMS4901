@@ -62,7 +62,7 @@ export default function LikeButton({
         <span
           key={burst}
           className={`inline-block ${
-            optimistic.liked ? "text-red-300" : ""
+            optimistic.liked ? "text-primary" : ""
           } ${burst > 0 ? "motion-safe:animate-[heart-pop_300ms_ease-out]" : ""}`}
         >
           {optimistic.liked ? "♥" : "♡"}
@@ -74,7 +74,7 @@ export default function LikeButton({
               style={
                 { "--dx": dx, animationDelay: `${i * 40}ms` } as React.CSSProperties
               }
-              className="pointer-events-none absolute top-0 left-0 text-xs text-red-300 opacity-0 motion-safe:animate-[heart-float_600ms_ease-out_backwards]"
+              className="pointer-events-none absolute top-0 left-0 text-xs text-primary opacity-0 motion-safe:animate-[heart-float_600ms_ease-out_backwards]"
             >
               ♥
             </span>

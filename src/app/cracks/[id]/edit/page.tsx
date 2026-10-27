@@ -30,7 +30,7 @@ export default async function EditCrackPage({
   }
 
   return (
-    <main className="flex flex-1 flex-col items-center gap-6 p-8">
+    <main className="flex flex-1 flex-col items-center gap-6 p-6 lg:p-8">
       <SiteHeader showNewCrack={false} />
       <h1 className="page-title">edit your crack</h1>
       <form action={updateCrack} className="flex w-full max-w-xl flex-col gap-4">

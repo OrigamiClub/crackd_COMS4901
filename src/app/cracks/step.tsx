@@ -19,7 +19,7 @@ export default function Step({
 }) {
   return (
     <section
-      className={`flex gap-4 rounded-lg border border-black/10 p-4 transition-opacity ${
+      className={`flex gap-4 rounded-xl border border-black/10 bg-surface p-4 transition-opacity dark:border-white/15 ${
         locked ? "opacity-50" : ""
       }`}
     >
@@ -31,7 +31,7 @@ export default function Step({
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div>
-          <h2 className="text-lg font-medium">{title}</h2>
+          <h2 className="heading">{title}</h2>
           {(locked ? lockedHint : hint) && (
             <p className="text-sm opacity-80">{locked ? lockedHint : hint}</p>
           )}

@@ -24,7 +24,7 @@ export default async function ProfilePage() {
   const isIncomplete = !profile?.first_name || !profile?.last_name;
 
   return (
-    <main className="flex flex-1 flex-col items-center gap-6 p-8">
+    <main className="flex flex-1 flex-col items-center gap-6 p-6 lg:p-8">
       <SiteHeader showNewCrack={false} />
       <h1 className="page-title max-w-2xl text-center">
         we promise not to sell your information to Facebook
@@ -49,7 +49,7 @@ export default async function ProfilePage() {
               defaultValue={profile?.first_name ?? ""}
               required
               autoComplete="given-name"
-              className="rounded-md border border-black/10 bg-white p-2 text-base dark:border-white/15 dark:bg-white/10"
+              className="input"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -60,7 +60,7 @@ export default async function ProfilePage() {
               defaultValue={profile?.last_name ?? ""}
               required
               autoComplete="family-name"
-              className="rounded-md border border-black/10 bg-white p-2 text-base dark:border-white/15 dark:bg-white/10"
+              className="input"
             />
           </label>
         </div>

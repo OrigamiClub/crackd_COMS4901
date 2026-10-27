@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import AccountButton from "@/components/account-button";
+import Wordmark from "@/components/wordmark";
 import CrackTile from "./cracks/crack-tile";
 import CrackTint from "./cracks/crack-tint";
 import NetworkGraph, {
@@ -33,6 +34,13 @@ const tab =
   "flex h-8 items-center rounded-full px-4 text-sm font-medium transition-colors";
 const tabOn = `${tab} bg-foreground text-white`;
 const tabOff = `${tab} text-foreground hover:bg-foreground/10`;
+
+// What logging in unlocks, for visitors' sidebar.
+const HOW_IT_WORKS = [
+  "Post a photo. Our hamsters suggest three captions to pick from.",
+  "Like the cracks that make you laugh.",
+  "See who on campus shares your sense of humor.",
+];
 
 // How many recent likes the sidebar shows.
 const SIDEBAR_LIKES = 5;
@@ -221,7 +229,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     ) : (
       <>
         {filter && isEmpty && <p className="text-sm">{filter.empty}</p>}
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {cracks?.map((crack, index) => (
             <CrackTile
               key={crack.id}
@@ -280,31 +288,45 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     </>
   );
 
-  // A left sidebar holds the title and, for logged-in users, recent likes
-  // and the humor map; the nav bar and feed fill the rest. The sidebar is
-  // a pale column split off by a thin line, like the admin app's, with its
-  // panels sitting directly on the fill. On narrow screens it stacks above
-  // the feed, without the map.
+  // A left sidebar holds the wordmark and, for logged-in users, recent
+  // likes and the humor map (visitors get a how-it-works card and a login
+  // button instead); the nav bar and feed fill the rest. The sidebar is a
+  // pale column split off by a thin line, like the admin app's. On narrow
+  // screens it stacks above the feed, without the map.
   return (
     <main className="flex flex-1 flex-col lg:flex-row">
       {/* On wide screens the sidebar fills the window height and the humor
           map takes whatever room the rest leaves. */}
-      <aside className="flex flex-col gap-6 border-b border-black/10 bg-foreground/5 p-8 lg:sticky lg:top-0 lg:h-dvh lg:w-96 lg:shrink-0 lg:border-r lg:border-b-0 dark:border-white/15">
-        <h1 className="page-title text-3xl">
-          cracking jokes in the city of new york
+      <aside className="flex flex-col gap-6 border-b border-black/10 bg-foreground/5 p-6 lg:sticky lg:top-0 lg:h-dvh lg:w-80 lg:shrink-0 lg:border-r lg:border-b-0 lg:p-8 dark:border-white/15">
+        <h1>
+          <Wordmark tagline />
         </h1>
         {!user ? (
-          <section className="card flex flex-col gap-3 text-sm">
-            <h2 className="section-title">What is this?</h2>
-            <p>
-              A meme board for Columbia and the city around it. Scroll the
-              cracks as much as you like — no account needed.
+          <>
+            <section className="card flex flex-col gap-4 text-sm">
+              <p>
+                A meme board for Columbia and the city around it. Scroll as
+                much as you like — no account needed.
+              </p>
+              <h2 className="section-title">With an account</h2>
+              <ol className="flex flex-col gap-3">
+                {HOW_IT_WORKS.map((step, index) => (
+                  <li key={step} className="flex gap-3">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-medium text-white">
+                      {index + 1}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+            <Link href="/login" className="btn-secondary">
+              Continue with Google
+            </Link>
+            <p className="mt-auto hidden text-xs opacity-75 lg:block">
+              A COMS 4901 project at Columbia University.
             </p>
-            <p>
-              Log in to like cracks, post your own (our hamsters will help with
-              the caption), and see who shares your sense of humor.
-            </p>
-          </section>
+          </>
         ) : (
           <>
             {latestLike ? (
@@ -312,7 +334,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               <CrackTint
                 crackId={latestLike.crack_id}
                 imgUrl={latestLike.crack_img_url}
-                className="flex shrink-0 flex-col gap-3 p-5"
+                className="flex shrink-0 flex-col gap-3 p-4"
               >
                 {recentLikes}
               </CrackTint>
@@ -348,7 +370,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           </>
         )}
       </aside>
-      <div className="flex min-w-0 flex-1 flex-col gap-6 p-8">
+      <div className="flex min-w-0 flex-1 flex-col gap-6 p-6 lg:p-8">
         {toolbar}
         {feed}
       </div>
