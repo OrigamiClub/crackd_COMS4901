@@ -91,7 +91,7 @@ body {
   @apply btn-pop flex h-10 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium;
 }
 
-/* The one main action on a screen (+ New Crack, Post, Save). */
+/* The one main action on a screen (+ Crack a joke, Post joke, Save). */
 @utility btn-primary {
   @apply btn border-black/10 bg-primary text-white;
 }

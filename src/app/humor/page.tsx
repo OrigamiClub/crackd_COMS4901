@@ -100,7 +100,15 @@ export default async function HumorPage() {
 
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
         <section className="card flex flex-col gap-4">
-          <h2 className="section-title">Who laughs at what you laugh at</h2>
+          <div className="flex flex-col gap-1">
+            <h2 className="section-title">Who laughs at what you laugh at</h2>
+            <p className="text-xs opacity-75">
+              Each circle is someone who has liked jokes; you&apos;re the big
+              one. A line means two people liked the same jokes, and thicker
+              lines mean more in common. Hover or tap a person to see what you
+              share, and drag circles to rearrange them.
+            </p>
+          </div>
           <NetworkGraph
             nodes={nodes}
             edges={edges}
@@ -112,7 +120,7 @@ export default async function HumorPage() {
               Closest humor match:{" "}
               <span className="font-semibold">{closestNode.name || "Someone"}</span>{" "}
               — you both liked {closest.shared}{" "}
-              {closest.shared === 1 ? "crack" : "cracks"}.
+              {closest.shared === 1 ? "joke" : "jokes"}.
             </p>
           )}
         </section>
@@ -137,7 +145,7 @@ export default async function HumorPage() {
           {!profile.enough ? (
             <div className="flex flex-col gap-3 text-sm">
               <p>
-                Like a few more cracks (or pick some hamster captions) and
+                Like a few more jokes (or pick some hamster captions) and
                 we&apos;ll tell you what makes you laugh.
               </p>
               <div className="flex items-center gap-2">
@@ -155,7 +163,7 @@ export default async function HumorPage() {
                 </span>
               </div>
               <Link href="/" className="btn-secondary self-start">
-                Browse cracks →
+                Browse jokes →
               </Link>
             </div>
           ) : (
@@ -201,7 +209,7 @@ export default async function HumorPage() {
 
           {likedCracks.length > 0 && (
             <div className="flex flex-col gap-2">
-              <h3 className="section-title">Cracks you&apos;ve liked</h3>
+              <h3 className="section-title">Jokes you&apos;ve liked</h3>
               <div className="flex flex-wrap gap-2">
                 {likedCracks.map((crack) => (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -220,11 +228,11 @@ export default async function HumorPage() {
 
           <p className="mt-auto text-xs opacity-60">
             Based on {profile.likedTagged} liked{" "}
-            {profile.likedTagged === 1 ? "crack" : "cracks"} and {profile.picks}{" "}
+            {profile.likedTagged === 1 ? "joke" : "jokes"} and {profile.picks}{" "}
             caption {profile.picks === 1 ? "pick" : "picks"}. &ldquo;Not your
             thing&rdquo; means common in the feed but rarely liked by you.
             {untagged > 0 &&
-              ` ${untagged} ${untagged === 1 ? "crack is" : "cracks are"} still being sorted by the hamsters.`}
+              ` ${untagged} ${untagged === 1 ? "joke is" : "jokes are"} still being sorted by the hamsters.`}
           </p>
         </section>
       </div>

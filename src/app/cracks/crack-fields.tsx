@@ -10,18 +10,18 @@ import Step from "./step";
 
 const COPY = {
   new: {
-    picture: "Choose a cracking picture",
+    picture: "Choose a photo",
     pictureHint: "Any image up to 4MB.",
-    caption: "Let our patented team of hamsters generate a caption",
-    submit: "Inflict your progeny upon the world",
-    submitButton: "Inflict it",
-    submitPending: "Inflicting…",
+    caption: "Get caption ideas from our AI hamsters",
+    submit: "Post your joke",
+    submitButton: "Post joke",
+    submitPending: "Posting…",
   },
   edit: {
     picture: "Swap the picture (optional)",
     pictureHint: "Leave this alone to keep the current picture.",
-    caption: "Re-hamster the caption",
-    submit: "Save your crack",
+    caption: "Get new caption ideas (optional)",
+    submit: "Save your joke",
     submitButton: "Save",
     submitPending: "Saving…",
   },

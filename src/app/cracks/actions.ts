@@ -298,7 +298,7 @@ export async function createCrack(formData: FormData) {
 
   if (error || !created) {
     await removeCrackImage(supabase, imgUrl);
-    throw new Error(error?.message ?? "Couldn't save the crack.");
+    throw new Error(error?.message ?? "Couldn't save the joke.");
   }
 
   await recordCaptionChoice(supabase, user.id, formData, created.id);
@@ -324,7 +324,7 @@ export async function updateCrack(formData: FormData) {
     .single();
 
   if (!existing) {
-    throw new Error("Meme not found, or you don't own it.");
+    throw new Error("Joke not found, or you didn't post it.");
   }
 
   const updates: { text: string | null; img_url?: string } = { text };

@@ -32,7 +32,7 @@ export default async function EditCrackPage({
   return (
     <main className="flex flex-1 flex-col items-center gap-6 p-6 lg:p-8">
       <SiteHeader showNewCrack={false} />
-      <h1 className="page-title">edit your crack</h1>
+      <h1 className="page-title">edit your joke</h1>
       <form action={updateCrack} className="flex w-full max-w-xl flex-col gap-4">
         <input type="hidden" name="id" value={crack.id} />
         <CrackFields
@@ -44,7 +44,7 @@ export default async function EditCrackPage({
       <form action={deleteCrack}>
         <input type="hidden" name="id" value={crack.id} />
         <button type="submit" className="text-sm text-red-700 underline">
-          Delete meme
+          Delete this joke
         </button>
       </form>
     </main>
