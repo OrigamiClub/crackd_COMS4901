@@ -37,7 +37,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
         Continue with Google
       </button>
       <Link href="/" className="text-sm underline">
-        or just browse the cracks first
+        or just browse the jokes first
       </Link>
     </main>
   );

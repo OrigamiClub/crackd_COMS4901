@@ -17,7 +17,13 @@ export default async function NewCrackPage() {
   return (
     <main className="flex flex-1 flex-col items-center gap-6 p-6 lg:p-8">
       <SiteHeader showNewCrack={false} />
-      <h1 className="page-title">contribute a crack!</h1>
+      <div className="flex flex-col items-center gap-1 text-center">
+        <h1 className="page-title">crack a joke</h1>
+        <p className="text-sm opacity-75">
+          Pick a photo, let the AI hamsters suggest three captions, choose the
+          funniest and post it to the board.
+        </p>
+      </div>
       <form action={createCrack} className="flex w-full max-w-xl flex-col gap-4">
         <CrackFields />
       </form>

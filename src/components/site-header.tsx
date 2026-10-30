@@ -5,7 +5,7 @@ import Wordmark from "@/components/wordmark";
 // Top bar for every page except home (which has its own sidebar): the site
 // name linking home on the left, the primary action and account on the
 // right. Pages whose own main action is a form (posting, editing, the
-// profile) hide "+ New Crack" so each screen has one primary button.
+// profile) hide "+ Crack a joke" so each screen has one primary button.
 export default function SiteHeader({
   showNewCrack = true,
 }: {
@@ -17,7 +17,7 @@ export default function SiteHeader({
       <div className="flex items-center gap-3">
         {showNewCrack && (
           <Link href="/cracks/new" className="btn-primary">
-            + New Crack
+            + Crack a joke
           </Link>
         )}
         <AccountButton />

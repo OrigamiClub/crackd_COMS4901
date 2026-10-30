@@ -179,7 +179,7 @@ export default function NetworkGraph({
       <p
         className={`rounded-lg border border-black/10 text-sm ${compact ? "p-3" : "p-6"}`}
       >
-        The network needs at least two people with likes. Go like some cracks
+        The network needs at least two people with likes. Go like some jokes
         and drag a friend in.
       </p>
     );
@@ -202,7 +202,7 @@ export default function NetworkGraph({
     const style = styleInfo(node.topStyle)?.label;
     return `${displayName(node)}${style ? ` · mostly ${style}` : ""} · ${
       edge
-        ? `you both liked ${edge.shared} ${edge.shared === 1 ? "crack" : "cracks"}`
+        ? `you both liked ${edge.shared} ${edge.shared === 1 ? "joke" : "jokes"}`
         : "no likes in common yet"
     }`;
   })();
@@ -216,10 +216,10 @@ export default function NetworkGraph({
   return (
     <div
       className={
-        compact ? "flex min-h-0 flex-1 flex-col gap-2" : "flex flex-col gap-3"
+        compact ? "flex flex-1 flex-col gap-2" : "flex flex-col gap-3"
       }
     >
-      <div ref={boxRef} className={compact ? "relative min-h-56 flex-1" : undefined}>
+      <div ref={boxRef} className={compact ? "relative min-h-48 flex-1" : undefined}>
         <svg
           ref={svgRef}
           viewBox={`0 0 ${size.width} ${size.height}`}
@@ -229,7 +229,7 @@ export default function NetworkGraph({
               : "w-full"
           }`}
           role="img"
-          aria-label="Network of users connected by cracks they both liked"
+          aria-label="Network of users connected by jokes they both liked"
         >
           <defs>
             {simNodes.map((node) => (
@@ -354,7 +354,7 @@ export default function NetworkGraph({
             <>
               <p className="opacity-75">
                 Both liked {selectedEdge.shared}{" "}
-                {selectedEdge.shared === 1 ? "crack" : "cracks"}
+                {selectedEdge.shared === 1 ? "joke" : "jokes"}
                 {selectedEdge.shared > selectedEdge.cracks.length
                   ? ", including:"
                   : ":"}

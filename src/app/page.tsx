@@ -10,23 +10,32 @@ import NetworkGraph, {
 } from "./humor/network-graph";
 import { styleInfo } from "@/lib/humor-vocab";
 
-// Feed views. They share one neutral tab style so "+ New Crack" stays the
+// Feed views. Posts are "jokes"; "crack" is only the verb (you crack a
+// joke). They share one neutral tab style so "+ Crack a joke" stays the
 // only highlighted action; "activity" is reached from the sidebar instead.
+const ALL_VIEW = {
+  key: null,
+  label: "All jokes",
+  description: "The newest jokes from everyone. Like the ones that land — your likes shape your humor profile.",
+};
 const FILTERS = [
   {
     key: "mine",
-    label: "My Cracks",
-    empty: "You haven't posted any cracks yet.",
+    label: "Jokes I've cracked",
+    description: "Everything you've posted. Use Edit on a card to change it.",
+    empty: "You haven't cracked any jokes yet.",
   },
   {
     key: "liked",
-    label: "Cracks I Like",
-    empty: "You haven't liked any cracks yet.",
+    label: "Jokes I liked",
+    description: "Jokes you've liked. Tap Liked again to take a like back.",
+    empty: "You haven't liked any jokes yet.",
   },
   {
     key: "activity",
-    label: "Likes on My Cracks",
-    empty: "No one has liked your cracks yet — keep cracking.",
+    label: "Likes on my jokes",
+    description: "Who liked your jokes, newest first.",
+    empty: "No one has liked your jokes yet — keep cracking.",
   },
 ] as const;
 
@@ -37,9 +46,9 @@ const tabOff = `${tab} text-foreground hover:bg-foreground/10`;
 
 // What logging in unlocks, for visitors' sidebar.
 const HOW_IT_WORKS = [
-  "Post a photo. Our hamsters suggest three captions to pick from.",
-  "Like the cracks that make you laugh.",
-  "See who on campus shares your sense of humor.",
+  "Upload a photo. Our AI hamsters write three captions; pick the funniest and post it.",
+  "Like the jokes that make you laugh.",
+  "See your humor profile and who on campus laughs at the same things.",
 ];
 
 // How many recent likes the sidebar shows.
@@ -164,16 +173,21 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   };
   // The map panel is accented with the user's favorite style's color, like
   // the profile card on /humor, or plum until that's known.
-  const mapColor =
-    styleInfo(nodes.find((n) => n.id === user?.id)?.topStyle)?.color ??
-    "var(--plum)";
+  const myStyle = styleInfo(nodes.find((n) => n.id === user?.id)?.topStyle);
+  const mapColor = myStyle?.color ?? "var(--plum)";
+  // The person you share the most liked jokes with, for the map's headline.
+  const closest = edges
+    .filter((e) => e.a === user?.id || e.b === user?.id)
+    .sort((a, b) => b.shared - a.shared)[0];
+  const closestName = closest
+    ? nodes.find((n) => n.id === (closest.a === user?.id ? closest.b : closest.a))?.name ||
+      "Someone"
+    : null;
 
   // One navigation bar above the feed: view tabs on the left, the primary
   // action and the account button on the right.
-  const tabs = [
-    { key: null, label: "All Cracks" },
-    ...FILTERS.filter((f) => f.key !== "activity"),
-  ];
+  const tabs = [ALL_VIEW, ...FILTERS.filter((f) => f.key !== "activity")];
+  const view = filter ?? ALL_VIEW;
   const toolbar = (
     <nav className="flex flex-wrap items-center justify-between gap-3">
       {user ? (
@@ -198,7 +212,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       <div className="flex items-center gap-3">
         {/* Visitors see it too; the form sends them to log in first. */}
         <Link href="/cracks/new" className="btn-primary">
-          + New Crack
+          + Crack a joke
         </Link>
         <AccountButton />
       </div>
@@ -209,9 +223,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     filter?.key === "activity" ? (
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="section-title">Likes on your cracks</h2>
+          <h2 className="section-title">Likes on your jokes</h2>
           <Link href="/" className="text-sm underline">
-            Back to all cracks
+            Back to all jokes
           </Link>
         </div>
         {isEmpty && <p className="text-sm">{filter.empty}</p>}
@@ -270,7 +284,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       </div>
       {(notifications?.length ?? 0) === 0 ? (
         <p className="text-sm opacity-75">
-          No one has liked your cracks yet — keep cracking.
+          No one has liked your jokes yet — keep cracking.
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -289,26 +303,23 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   );
 
   // A left sidebar holds the wordmark and, for logged-in users, recent
-  // likes and the humor map (visitors get a how-it-works card and a login
-  // button instead); the nav bar and feed fill the rest. The sidebar is a
+  // likes and a humor-match card around the mini map (visitors get a
+  // how-it-works card instead; their login button is in the feed intro); the nav bar and feed fill the rest. The sidebar is a
   // pale column split off by a thin line, like the admin app's. On narrow
   // screens it stacks above the feed, without the map.
   return (
     <main className="flex flex-1 flex-col lg:flex-row">
       {/* On wide screens the sidebar fills the window height and the humor
-          map takes whatever room the rest leaves. */}
-      <aside className="flex flex-col gap-6 border-b border-black/10 bg-foreground/5 p-6 lg:sticky lg:top-0 lg:h-dvh lg:w-80 lg:shrink-0 lg:border-r lg:border-b-0 lg:p-8 dark:border-white/15">
+          map takes whatever room the rest leaves. In a short window the map
+          keeps its minimum size and the sidebar scrolls instead. */}
+      <aside className="flex flex-col gap-6 border-b border-black/10 bg-foreground/5 p-6 lg:sticky lg:top-0 lg:h-dvh lg:w-80 lg:shrink-0 lg:overflow-y-auto lg:border-r lg:border-b-0 lg:p-8 dark:border-white/15">
         <h1>
           <Wordmark tagline />
         </h1>
         {!user ? (
           <>
             <section className="card flex flex-col gap-4 text-sm">
-              <p>
-                A meme board for Columbia and the city around it. Scroll as
-                much as you like — no account needed.
-              </p>
-              <h2 className="section-title">With an account</h2>
+              <h2 className="section-title">How it works</h2>
               <ol className="flex flex-col gap-3">
                 {HOW_IT_WORKS.map((step, index) => (
                   <li key={step} className="flex gap-3">
@@ -320,9 +331,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 ))}
               </ol>
             </section>
-            <Link href="/login" className="btn-secondary">
-              Continue with Google
-            </Link>
             <p className="mt-auto hidden text-xs opacity-75 lg:block">
               A COMS 4901 project at Columbia University.
             </p>
@@ -345,14 +353,30 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             )}
             {/* Your favorite style's color, as an accent edge. */}
             <section
-              className="card hidden min-h-0 flex-1 flex-col gap-3 border-l-4 lg:flex"
+              className="card hidden flex-1 flex-col gap-3 border-l-4 lg:flex"
               style={{ borderLeftColor: mapColor }}
             >
-              <h2 className="section-title" style={{ color: mapColor }}>
-                <Link href="/humor" className="hover:underline">
-                  Who laughs at what you laugh at →
-                </Link>
-              </h2>
+              <div className="flex flex-col gap-1">
+                <h2 className="section-title" style={{ color: mapColor }}>
+                  Your humor match
+                </h2>
+                <p className="text-sm">
+                  {closestName ? (
+                    <>
+                      You and <span className="font-semibold">{closestName}</span>{" "}
+                      liked {closest.shared} of the same{" "}
+                      {closest.shared === 1 ? "joke" : "jokes"}.
+                    </>
+                  ) : (
+                    "Like a few jokes to find people who laugh at the same things."
+                  )}
+                  {myStyle && ` Your humor: mostly ${myStyle.label.toLowerCase()}.`}
+                </p>
+                <p className="text-xs opacity-75">
+                  You&apos;re the big circle. A line joins two people who liked
+                  the same jokes; thicker means more in common.
+                </p>
+              </div>
               <NetworkGraph
                 nodes={nodes}
                 edges={edges}
@@ -360,18 +384,37 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 cracks={{}}
                 compact
               />
+              <Link href="/humor" className="btn-outline shrink-0">
+                Explore your humor map →
+              </Link>
             </section>
             <Link
               href="/humor"
               className="text-sm underline lg:hidden"
             >
-              See your humor map →
+              See your humor match →
             </Link>
           </>
         )}
       </aside>
       <div className="flex min-w-0 flex-1 flex-col gap-6 p-6 lg:p-8">
         {toolbar}
+        {user ? (
+          <p className="-mt-2 text-sm opacity-75">{view.description}</p>
+        ) : (
+          <section className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="heading">Columbia&apos;s AI-assisted meme board</h2>
+              <p className="text-sm opacity-75">
+                Post a photo and our AI suggests the punchline. Like the jokes
+                that land, and find out who on campus shares your sense of humor.
+              </p>
+            </div>
+            <Link href="/login" className="btn-secondary shrink-0">
+              Log in to post and like
+            </Link>
+          </section>
+        )}
         {feed}
       </div>
     </main>
@@ -420,7 +463,7 @@ function LikeRow({
             <span className="font-semibold">{name}</span>{" "}
             {compact
               ? `liked this · ${shortTimeAgo(like.liked_at)}`
-              : `liked your crack · ${timeAgo(like.liked_at)}`}
+              : `liked your joke · ${timeAgo(like.liked_at)}`}
           </p>
           {like.crack_text && (
             <p className="truncate text-xs opacity-75">{like.crack_text}</p>

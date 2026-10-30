@@ -5,10 +5,14 @@ import Link from "next/link";
 import { useCrackColor } from "./crack-color";
 import LikeButton from "./like-button";
 
-// One crack in the home feed: a card with a strip of its picture's color
-// along the top, a square picture (or, for text-only cracks, the caption
-// on a square of that color), and a caption clamped to three lines that
-// opens in full on click. Fades in after the tiles before it.
+// Captions longer than this get clamped with a "Show more" link.
+const LONG_CAPTION = 110;
+
+// One joke in the home feed: a card with a strip of its picture's color
+// along the top, a square picture (or, for text-only jokes, the caption on
+// a square of that color), the caption (long ones clamped to three lines
+// with Show more), and the like control. The poster's own jokes say so and
+// get an Edit button. Fades in after the tiles before it.
 export default function CrackTile({
   id,
   text,
@@ -58,18 +62,21 @@ export default function CrackTile({
         </div>
       )}
       {text && imgUrl && (
-        <figcaption className="px-4 pt-3 text-sm">
-          <button
-            type="button"
-            onClick={() => setExpanded((open) => !open)}
-            aria-expanded={expanded}
-            className={`text-left ${expanded ? "" : "line-clamp-3"}`}
-          >
-            {text}
-          </button>
+        <figcaption className="flex flex-col items-start gap-1 px-4 pt-3 text-sm">
+          <p className={expanded ? "" : "line-clamp-3"}>{text}</p>
+          {text.length > LONG_CAPTION && (
+            <button
+              type="button"
+              onClick={() => setExpanded((open) => !open)}
+              aria-expanded={expanded}
+              className="text-xs font-medium underline opacity-75 hover:opacity-100"
+            >
+              {expanded ? "Show less" : "Show more"}
+            </button>
+          )}
         </figcaption>
       )}
-      <div className="mt-auto flex items-center justify-between px-4 pt-3 pb-4">
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 px-4 pt-3 pb-4">
         <LikeButton
           crackId={id}
           count={likeCount}
@@ -77,9 +84,15 @@ export default function CrackTile({
           loggedIn={loggedIn}
         />
         {canEdit && (
-          <Link href={`/cracks/${id}/edit`} className="text-sm underline">
-            Edit
-          </Link>
+          <span className="flex items-center gap-2">
+            <span className="text-xs opacity-75">Your joke</span>
+            <Link
+              href={`/cracks/${id}/edit`}
+              className="btn-pop flex h-8 items-center rounded-full border border-foreground/40 px-3 text-sm font-medium"
+            >
+              Edit
+            </Link>
+          </span>
         )}
       </div>
     </figure>

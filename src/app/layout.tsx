@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Crackd",
-  description: "Hello World app for COMS 4901",
+  description:
+    "Columbia's AI-assisted meme board: post a photo, get caption ideas, and like the jokes that land.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

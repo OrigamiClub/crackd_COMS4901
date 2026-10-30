@@ -32,7 +32,7 @@ export default function Error({
           Try again
         </button>
         <Link href="/" className="btn-secondary">
-          Back to the cracks
+          Back to the jokes
         </Link>
       </div>
     </main>
